@@ -2,7 +2,7 @@
   #include <DallasTemperature.h>
   #include <Wire.h>
 
-  // Declare variables here ---------------------------------------------------
+  // Declare variables ---------------------------------------------------
 
   #define HOST_ADDRESS 0x01
 
@@ -18,19 +18,15 @@
     byte hour, minute;
   } RTC;
 
-  // Global var.
   unsigned long time_now = 0;
   int valve1, valve2, queue, indx = 0;
   char buffer[9];
 
-  // Set relay pin
   const int relay1 = 4;
   const int relay2 = 7;
   const int relay3 = 8;
 
-  // GPIO DS18B20 (Temp sensor)
-  // GPIO 13 = Pin D7
-  const int oneWireBus = 2;
+  const int oneWireBus = 2; // GPIO DS18B20 (Temp sensor)
   OneWire oneWire(oneWireBus);
   DallasTemperature sensors(&oneWire);
 
@@ -38,11 +34,6 @@
     char text[4];
     float value; 
   } fl2b;
-
-  union recieveData {
-    char text[4];
-    float value;
-  } rec_data;
 
   // Utility function ---------------------------------------------------------
 
@@ -59,6 +50,7 @@
   }
 
   // I2C Comms ----------------------------------------------------------------
+
   void receiveSettings(){// Recieve settings from host per 30 sec and initial setup
     while (Wire.available()){
       buffer[indx] = Wire.read();
@@ -66,9 +58,9 @@
     }
     indx = 0;
     for (int i=0; i<4; i++){
-      rec_data.text[i] = buffer[i];
+      fl2b.text[i] = buffer[i];
     }
-    temperature.threshold = rec_data.value;
+    temperature.threshold = fl2b.value;
     RTC.hour = buffer[4];
     RTC.minute = buffer[5];
     timer.duration = buffer[6];
