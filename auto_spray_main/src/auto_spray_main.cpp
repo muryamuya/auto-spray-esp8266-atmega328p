@@ -59,6 +59,33 @@
 	0b00000
   };
 
+  // Declare functions ---------------------------------------------------
+  void sendSettings();
+  void receiveStatus();
+  void clear_memory();
+  bool buttonRead(int pin);
+  byte decToBcd(byte val);
+  byte bcdToDec(byte val);
+  void setDS3231time(byte second, byte minute, byte hour, byte dayOfWeek, byte dayOfMonth, byte month, byte year);
+  void readDS3231time(byte *second, byte *minute, byte *hour, byte *dayOfWeek, byte *dayOfMonth, byte *month, byte *year);
+  void displayMain();
+  void displayTempSet();
+  void displayTempSetEdit();
+  void displayTimeSet();
+  void displayTimeSetHour();
+  void displayTimeSetMinute();
+  void displayDurationSet();
+  void displayDurationSetEdit();
+  void displayBacklightSettings();
+  void displayBacklightSettingsEdit();
+  void displayRTCset();
+  void displayRTCsetHour();
+  void displayRTCsetMinute();
+  void displayFactoryReset();
+  void displayFactoryResetConfirm();
+  void displayMenu();
+  void buttonMenu();
+
   // I2C Comms -----------------------------------------------------------
 
   void sendSettings(){ // send per 5 sec

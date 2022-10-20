@@ -36,6 +36,16 @@
     float value; 
   } fl2b;
 
+  // Declare functions ---------------------------------------------------
+
+  unsigned int minuteToMillis(unsigned int minute);
+  unsigned int hourToMillis(unsigned int hour);
+  void receiveSettings();
+  void sendStatus();
+  void checkTemp();
+  void checkTime();
+  void debugging();
+
   // Utility function ---------------------------------------------------------
 
   unsigned int minuteToMillis(unsigned int minute){
@@ -148,8 +158,8 @@
     pinMode(relay3, OUTPUT);
     Serial.begin(9600);
     Serial.println("Start ---------");
-    RTC.hour, RTC.minute = 0;
-    timer.hour, timer.duration = 0;
+    RTC.hour = RTC.minute = 0;
+    timer.hour = timer.duration = 0;
     timer.minute = 3;
     temperature.threshold = 45.6;
     delay(1000);
