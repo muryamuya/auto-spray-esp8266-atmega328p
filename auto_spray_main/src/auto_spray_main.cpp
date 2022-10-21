@@ -36,8 +36,7 @@ struct temperature_set
 
 struct timer_set
 {
-  byte hour, minute;
-  bool setting;
+  byte hour, minute, setting;
 } timer1, timer2, timer3;
 
 struct RTC_now
@@ -48,7 +47,7 @@ struct RTC_now
 struct device_settings
 {
   byte backlight; // 0: on, 1: 3 sec, 2: 5 sec, 3: 10 sec, 4: off
-  byte duration;
+  byte duration;  // spray duration
 } deviceSet;
 
 union floatToBytes
@@ -87,7 +86,38 @@ byte charDegree[8] = {
     0b00000,
     0b00000};
 
+byte charT1[8] = {
+    0b11100,
+    0b01000,
+    0b01000,
+    0b00010,
+    0b00110,
+    0b00010,
+    0b00010,
+    0b00111};
+
+byte charT2[8] = {
+    0b11100,
+    0b01000,
+    0b01000,
+    0b00110,
+    0b00001,
+    0b00010,
+    0b00100,
+    0b00111};
+
+byte charT3[8] = {
+    0b11100,
+    0b01000,
+    0b01000,
+    0b00110,
+    0b00001,
+    0b00010,
+    0b00001,
+    0b00110};
+
 // Declare functions ---------------------------------------------------
+
 void sendSettings();
 void receiveStatus();
 void factoryReset();
@@ -102,9 +132,16 @@ void displayMain();
 void displayTempSet();
 void displayTempSetEdit();
 void displayTimeSet();
-void displayTimeSetHour();
-void displayTimeSetMinute();
+void displayTimeSetT1Hour();
+void displayTimeSetT1Minute();
+void displayTimeSetT2Hour();
+void displayTimeSetT2Minute();
+void displayTimeSetT3Hour();
+void displayTimeSetT3Minute();
 void displayTimerSelect();
+void displayTimerSelectT1Edit();
+void displayTimerSelectT2Edit();
+void displayTimerSelectT3Edit();
 void displayDurationSet();
 void displayDurationSetEdit();
 void displayBacklightSettings();
@@ -120,8 +157,8 @@ void buttonMenu();
 // I2C Comms -----------------------------------------------------------
 
 void sendSettings()
-{ // send per 5 sec
-  if (millis() >= (counter_send + 5000))
+{ // send per sec
+  if (millis() >= (counter_send + 1000))
   {
     Wire.beginTransmission(ATM_ADDRESS);
     fl2b.value = temperature.threshold;
@@ -131,6 +168,13 @@ void sendSettings()
     Wire.write(deviceSet.duration);
     Wire.write(timer1.hour);
     Wire.write(timer1.minute);
+    Wire.write(timer1.setting);
+    Wire.write(timer2.hour);
+    Wire.write(timer2.minute);
+    Wire.write(timer2.setting);
+    Wire.write(timer3.hour);
+    Wire.write(timer3.minute);
+    Wire.write(timer3.setting);
     Wire.endTransmission();
     counter_send = millis();
   }
@@ -313,7 +357,7 @@ void displayMain()
   lcd.setCursor(6, 0);
   lcd.print(temperature.celcius);
   lcd.setCursor(11, 0);
-  lcd.write(0);
+  lcd.write((uint8_t)0);
   lcd.setCursor(12, 0);
   lcd.print("C");
   lcd.setCursor(0, 1);
@@ -351,7 +395,7 @@ void displayTempSet()
   lcd.setCursor(0, 1);
   lcd.print(temperature.threshold);
   lcd.setCursor(4, 1);
-  lcd.write(0);
+  lcd.write((uint8_t)0);
   lcd.setCursor(5, 1);
   lcd.print("C");
 }
@@ -361,7 +405,7 @@ void displayTempSetEdit()
   lcd.setCursor(0, 0);
   lcd.print("Temp Threshold");
   lcd.setCursor(4, 1);
-  lcd.write(0);
+  lcd.write((uint8_t)0);
   lcd.setCursor(5, 1);
   lcd.print("C");
 }
@@ -370,67 +414,542 @@ void displayTimeSet()
 {
   lcd.setCursor(0, 0);
   lcd.print("Timer");
-  lcd.setCursor(0, 1);
+
+  lcd.setCursor(8, 0);
+  lcd.write((uint8_t)1);
+  lcd.setCursor(10, 0);
   if (timer1.hour < 10)
   {
     lcd.print("0");
-    lcd.setCursor(1, 1);
+    lcd.setCursor(11, 0);
     lcd.print(timer1.hour);
   }
   else
   {
     lcd.print(timer1.hour);
   }
-  lcd.setCursor(2, 1);
+  lcd.setCursor(12, 0);
   lcd.print(":");
-  lcd.setCursor(3, 1);
+  lcd.setCursor(13, 0);
   if (timer1.minute < 10)
   {
     lcd.print("0");
-    lcd.setCursor(4, 1);
+    lcd.setCursor(14, 0);
     lcd.print(timer1.minute);
   }
   else
   {
     lcd.print(timer1.minute);
   }
-}
 
-void displayTimeSetHour()
-{
-  lcd.setCursor(0, 0);
-  lcd.print("Timer");
-  lcd.setCursor(2, 1);
-  lcd.print(":");
-  lcd.setCursor(3, 1);
-  if (timer1.minute < 10)
-  {
-    lcd.print("0");
-    lcd.setCursor(4, 1);
-    lcd.print(timer1.minute);
-  }
-  else
-  {
-    lcd.print(timer1.minute);
-  }
-}
-
-void displayTimeSetMinute()
-{
-  lcd.setCursor(0, 0);
-  lcd.print("Timer");
   lcd.setCursor(0, 1);
+  lcd.write((uint8_t)2);
+  lcd.setCursor(2, 1);
+  if (timer2.hour < 10)
+  {
+    lcd.print("0");
+    lcd.setCursor(3, 1);
+    lcd.print(timer2.hour);
+  }
+  else
+  {
+    lcd.print(timer2.hour);
+  }
+  lcd.setCursor(4, 1);
+  lcd.print(":");
+  lcd.setCursor(5, 1);
+  if (timer2.minute < 10)
+  {
+    lcd.print("0");
+    lcd.setCursor(6, 1);
+    lcd.print(timer2.minute);
+  }
+  else
+  {
+    lcd.print(timer2.minute);
+  }
+
+  lcd.setCursor(8, 1);
+  lcd.write((uint8_t)3);
+  lcd.setCursor(10, 1);
+  if (timer3.hour < 10)
+  {
+    lcd.print("0");
+    lcd.setCursor(11, 1);
+    lcd.print(timer3.hour);
+  }
+  else
+  {
+    lcd.print(timer3.hour);
+  }
+  lcd.setCursor(12, 1);
+  lcd.print(":");
+  lcd.setCursor(13, 1);
+  if (timer3.minute < 10)
+  {
+    lcd.print("0");
+    lcd.setCursor(14, 1);
+    lcd.print(timer3.minute);
+  }
+  else
+  {
+    lcd.print(timer3.minute);
+  }
+}
+
+void displayTimeSetT1Hour()
+{
+  lcd.setCursor(0, 0);
+  lcd.print("Timer");
+
+  lcd.setCursor(8, 0);
+  lcd.write((uint8_t)1);
+  lcd.setCursor(12, 0);
+  lcd.print(":");
+  lcd.setCursor(13, 0);
+  if (timer1.minute < 10)
+  {
+    lcd.print("0");
+    lcd.setCursor(14, 0);
+    lcd.print(timer1.minute);
+  }
+  else
+  {
+    lcd.print(timer1.minute);
+  }
+
+  lcd.setCursor(0, 1);
+  lcd.write((uint8_t)2);
+  lcd.setCursor(2, 1);
+  if (timer2.hour < 10)
+  {
+    lcd.print("0");
+    lcd.setCursor(3, 1);
+    lcd.print(timer2.hour);
+  }
+  else
+  {
+    lcd.print(timer2.hour);
+  }
+  lcd.setCursor(4, 1);
+  lcd.print(":");
+  lcd.setCursor(5, 1);
+  if (timer2.minute < 10)
+  {
+    lcd.print("0");
+    lcd.setCursor(6, 1);
+    lcd.print(timer2.minute);
+  }
+  else
+  {
+    lcd.print(timer2.minute);
+  }
+
+  lcd.setCursor(8, 1);
+  lcd.write((uint8_t)3);
+  lcd.setCursor(10, 1);
+  if (timer3.hour < 10)
+  {
+    lcd.print("0");
+    lcd.setCursor(11, 1);
+    lcd.print(timer3.hour);
+  }
+  else
+  {
+    lcd.print(timer3.hour);
+  }
+  lcd.setCursor(12, 1);
+  lcd.print(":");
+  lcd.setCursor(13, 1);
+  if (timer3.minute < 10)
+  {
+    lcd.print("0");
+    lcd.setCursor(14, 1);
+    lcd.print(timer3.minute);
+  }
+  else
+  {
+    lcd.print(timer3.minute);
+  }
+}
+
+void displayTimeSetT1Minute()
+{
+  lcd.setCursor(0, 0);
+  lcd.print("Timer");
+
+  lcd.setCursor(8, 0);
+  lcd.write((uint8_t)1);
+  lcd.setCursor(10, 0);
   if (timer1.hour < 10)
   {
     lcd.print("0");
-    lcd.setCursor(1, 1);
+    lcd.setCursor(11, 0);
     lcd.print(timer1.hour);
   }
   else
   {
     lcd.print(timer1.hour);
   }
+  lcd.setCursor(12, 0);
+  lcd.print(":");
+
+  lcd.setCursor(0, 1);
+  lcd.write((uint8_t)2);
   lcd.setCursor(2, 1);
+  if (timer2.hour < 10)
+  {
+    lcd.print("0");
+    lcd.setCursor(3, 1);
+    lcd.print(timer2.hour);
+  }
+  else
+  {
+    lcd.print(timer2.hour);
+  }
+  lcd.setCursor(4, 1);
+  lcd.print(":");
+  lcd.setCursor(5, 1);
+  if (timer2.minute < 10)
+  {
+    lcd.print("0");
+    lcd.setCursor(6, 1);
+    lcd.print(timer2.minute);
+  }
+  else
+  {
+    lcd.print(timer2.minute);
+  }
+
+  lcd.setCursor(8, 1);
+  lcd.write((uint8_t)3);
+  lcd.setCursor(10, 1);
+  if (timer3.hour < 10)
+  {
+    lcd.print("0");
+    lcd.setCursor(11, 1);
+    lcd.print(timer3.hour);
+  }
+  else
+  {
+    lcd.print(timer3.hour);
+  }
+  lcd.setCursor(12, 1);
+  lcd.print(":");
+  lcd.setCursor(13, 1);
+  if (timer3.minute < 10)
+  {
+    lcd.print("0");
+    lcd.setCursor(14, 1);
+    lcd.print(timer3.minute);
+  }
+  else
+  {
+    lcd.print(timer3.minute);
+  }
+}
+
+void displayTimeSetT2Hour()
+{
+  lcd.setCursor(0, 0);
+  lcd.print("Timer");
+
+  lcd.setCursor(8, 0);
+  lcd.write((uint8_t)1);
+  lcd.setCursor(10, 0);
+  if (timer1.hour < 10)
+  {
+    lcd.print("0");
+    lcd.setCursor(11, 0);
+    lcd.print(timer1.hour);
+  }
+  else
+  {
+    lcd.print(timer1.hour);
+  }
+  lcd.setCursor(12, 0);
+  lcd.print(":");
+  lcd.setCursor(13, 0);
+  if (timer1.minute < 10)
+  {
+    lcd.print("0");
+    lcd.setCursor(14, 0);
+    lcd.print(timer1.minute);
+  }
+  else
+  {
+    lcd.print(timer1.minute);
+  }
+
+  lcd.setCursor(0, 1);
+  lcd.write((uint8_t)2);
+  lcd.setCursor(4, 1);
+  lcd.print(":");
+  lcd.setCursor(5, 1);
+  if (timer2.minute < 10)
+  {
+    lcd.print("0");
+    lcd.setCursor(6, 1);
+    lcd.print(timer2.minute);
+  }
+  else
+  {
+    lcd.print(timer2.minute);
+  }
+
+  lcd.setCursor(8, 1);
+  lcd.write((uint8_t)3);
+  lcd.setCursor(10, 1);
+  if (timer3.hour < 10)
+  {
+    lcd.print("0");
+    lcd.setCursor(11, 1);
+    lcd.print(timer3.hour);
+  }
+  else
+  {
+    lcd.print(timer3.hour);
+  }
+  lcd.setCursor(12, 1);
+  lcd.print(":");
+  lcd.setCursor(13, 1);
+  if (timer3.minute < 10)
+  {
+    lcd.print("0");
+    lcd.setCursor(14, 1);
+    lcd.print(timer3.minute);
+  }
+  else
+  {
+    lcd.print(timer3.minute);
+  }
+}
+
+void displayTimeSetT2Minute()
+{
+  lcd.setCursor(0, 0);
+  lcd.print("Timer");
+
+  lcd.setCursor(8, 0);
+  lcd.write((uint8_t)1);
+  lcd.setCursor(10, 0);
+  if (timer1.hour < 10)
+  {
+    lcd.print("0");
+    lcd.setCursor(11, 0);
+    lcd.print(timer1.hour);
+  }
+  else
+  {
+    lcd.print(timer1.hour);
+  }
+  lcd.setCursor(12, 0);
+  lcd.print(":");
+  lcd.setCursor(13, 0);
+  if (timer1.minute < 10)
+  {
+    lcd.print("0");
+    lcd.setCursor(14, 0);
+    lcd.print(timer1.minute);
+  }
+  else
+  {
+    lcd.print(timer1.minute);
+  }
+
+  lcd.setCursor(0, 1);
+  lcd.write((uint8_t)2);
+  lcd.setCursor(2, 1);
+  if (timer2.hour < 10)
+  {
+    lcd.print("0");
+    lcd.setCursor(3, 1);
+    lcd.print(timer2.hour);
+  }
+  else
+  {
+    lcd.print(timer2.hour);
+  }
+  lcd.setCursor(4, 1);
+  lcd.print(":");
+
+  lcd.setCursor(8, 1);
+  lcd.write((uint8_t)3);
+  lcd.setCursor(10, 1);
+  if (timer3.hour < 10)
+  {
+    lcd.print("0");
+    lcd.setCursor(11, 1);
+    lcd.print(timer3.hour);
+  }
+  else
+  {
+    lcd.print(timer3.hour);
+  }
+  lcd.setCursor(12, 1);
+  lcd.print(":");
+  lcd.setCursor(13, 1);
+  if (timer3.minute < 10)
+  {
+    lcd.print("0");
+    lcd.setCursor(14, 1);
+    lcd.print(timer3.minute);
+  }
+  else
+  {
+    lcd.print(timer3.minute);
+  }
+}
+
+void displayTimeSetT3Hour()
+{
+  lcd.setCursor(0, 0);
+  lcd.print("Timer");
+
+  lcd.setCursor(8, 0);
+  lcd.write((uint8_t)1);
+  lcd.setCursor(10, 0);
+  if (timer1.hour < 10)
+  {
+    lcd.print("0");
+    lcd.setCursor(11, 0);
+    lcd.print(timer1.hour);
+  }
+  else
+  {
+    lcd.print(timer1.hour);
+  }
+  lcd.setCursor(12, 0);
+  lcd.print(":");
+  lcd.setCursor(13, 0);
+  if (timer1.minute < 10)
+  {
+    lcd.print("0");
+    lcd.setCursor(14, 0);
+    lcd.print(timer1.minute);
+  }
+  else
+  {
+    lcd.print(timer1.minute);
+  }
+
+  lcd.setCursor(0, 1);
+  lcd.write((uint8_t)2);
+  lcd.setCursor(2, 1);
+  if (timer2.hour < 10)
+  {
+    lcd.print("0");
+    lcd.setCursor(3, 1);
+    lcd.print(timer2.hour);
+  }
+  else
+  {
+    lcd.print(timer2.hour);
+  }
+  lcd.setCursor(4, 1);
+  lcd.print(":");
+  lcd.setCursor(5, 1);
+  if (timer2.minute < 10)
+  {
+    lcd.print("0");
+    lcd.setCursor(6, 1);
+    lcd.print(timer2.minute);
+  }
+  else
+  {
+    lcd.print(timer2.minute);
+  }
+
+  lcd.setCursor(8, 1);
+  lcd.write((uint8_t)3);
+  lcd.setCursor(12, 1);
+  lcd.print(":");
+  lcd.setCursor(13, 1);
+  if (timer3.minute < 10)
+  {
+    lcd.print("0");
+    lcd.setCursor(14, 1);
+    lcd.print(timer3.minute);
+  }
+  else
+  {
+    lcd.print(timer3.minute);
+  }
+}
+
+void displayTimeSetT3Minute()
+{
+  lcd.setCursor(0, 0);
+  lcd.print("Timer");
+
+  lcd.setCursor(8, 0);
+  lcd.write((uint8_t)1);
+  lcd.setCursor(10, 0);
+  if (timer1.hour < 10)
+  {
+    lcd.print("0");
+    lcd.setCursor(11, 0);
+    lcd.print(timer1.hour);
+  }
+  else
+  {
+    lcd.print(timer1.hour);
+  }
+  lcd.setCursor(12, 0);
+  lcd.print(":");
+  lcd.setCursor(13, 0);
+  if (timer1.minute < 10)
+  {
+    lcd.print("0");
+    lcd.setCursor(14, 0);
+    lcd.print(timer1.minute);
+  }
+  else
+  {
+    lcd.print(timer1.minute);
+  }
+
+  lcd.setCursor(0, 1);
+  lcd.write((uint8_t)2);
+  lcd.setCursor(2, 1);
+  if (timer2.hour < 10)
+  {
+    lcd.print("0");
+    lcd.setCursor(3, 1);
+    lcd.print(timer2.hour);
+  }
+  else
+  {
+    lcd.print(timer2.hour);
+  }
+  lcd.setCursor(4, 1);
+  lcd.print(":");
+  lcd.setCursor(5, 1);
+  if (timer2.minute < 10)
+  {
+    lcd.print("0");
+    lcd.setCursor(6, 1);
+    lcd.print(timer2.minute);
+  }
+  else
+  {
+    lcd.print(timer2.minute);
+  }
+
+  lcd.setCursor(8, 1);
+  lcd.write((uint8_t)3);
+  lcd.setCursor(10, 1);
+  if (timer3.hour < 10)
+  {
+    lcd.print("0");
+    lcd.setCursor(11, 1);
+    lcd.print(timer3.hour);
+  }
+  else
+  {
+    lcd.print(timer3.hour);
+  }
+  lcd.setCursor(12, 1);
   lcd.print(":");
 }
 
@@ -438,8 +957,137 @@ void displayTimerSelect()
 {
   lcd.setCursor(0, 0);
   lcd.print("Timer");
+  lcd.setCursor(8, 0);
+  lcd.write((uint8_t)1);
+  lcd.setCursor(10, 0);
+  if (timer1.setting == 0)
+  {
+    lcd.print("Off");
+  }
+  if (timer1.setting == 1)
+  {
+    lcd.print("On");
+  }
+
   lcd.setCursor(0, 1);
-  lcd.print("T1:On  T2:Off");
+  lcd.write((uint8_t)2);
+  lcd.setCursor(2, 1);
+  if (timer2.setting == 0)
+  {
+    lcd.print("Off");
+  }
+  if (timer2.setting == 1)
+  {
+    lcd.print("On");
+  }
+
+  lcd.setCursor(8, 1);
+  lcd.write((uint8_t)3);
+  lcd.setCursor(10, 1);
+  if (timer3.setting == 0)
+  {
+    lcd.print("Off");
+  }
+  if (timer3.setting == 1)
+  {
+    lcd.print("On");
+  }
+}
+
+void displayTimerSelectT1Edit()
+{
+  lcd.setCursor(0, 0);
+  lcd.print("Timer");
+  lcd.setCursor(8, 0);
+  lcd.write((uint8_t)1);
+
+  lcd.setCursor(0, 1);
+  lcd.write((uint8_t)2);
+  lcd.setCursor(2, 1);
+  if (timer2.setting == 0)
+  {
+    lcd.print("Off");
+  }
+  if (timer2.setting == 1)
+  {
+    lcd.print("On");
+  }
+
+  lcd.setCursor(8, 1);
+  lcd.write((uint8_t)3);
+  lcd.setCursor(10, 1);
+  if (timer3.setting == 0)
+  {
+    lcd.print("Off");
+  }
+  if (timer3.setting == 1)
+  {
+    lcd.print("On");
+  }
+}
+
+void displayTimerSelectT2Edit()
+{
+  lcd.setCursor(0, 0);
+  lcd.print("Timer");
+  lcd.setCursor(8, 0);
+  lcd.write((uint8_t)1);
+  lcd.setCursor(10, 0);
+  if (timer1.setting == 0)
+  {
+    lcd.print("Off");
+  }
+  if (timer1.setting == 1)
+  {
+    lcd.print("On");
+  }
+
+  lcd.setCursor(0, 1);
+  lcd.write((uint8_t)2);
+
+  lcd.setCursor(8, 1);
+  lcd.write((uint8_t)3);
+  lcd.setCursor(10, 1);
+  if (timer3.setting == 0)
+  {
+    lcd.print("Off");
+  }
+  if (timer3.setting == 1)
+  {
+    lcd.print("On");
+  }
+}
+
+void displayTimerSelectT3Edit()
+{
+  lcd.setCursor(0, 0);
+  lcd.print("Timer");
+  lcd.setCursor(8, 0);
+  lcd.write((uint8_t)1);
+  lcd.setCursor(10, 0);
+  if (timer1.setting == 0)
+  {
+    lcd.print("Off");
+  }
+  if (timer1.setting == 1)
+  {
+    lcd.print("On");
+  }
+
+  lcd.setCursor(0, 1);
+  lcd.write((uint8_t)2);
+  lcd.setCursor(2, 1);
+  if (timer2.setting == 0)
+  {
+    lcd.print("Off");
+  }
+  if (timer2.setting == 1)
+  {
+    lcd.print("On");
+  }
+
+  lcd.setCursor(8, 1);
+  lcd.write((uint8_t)3);
 }
 
 void displayDurationSet()
@@ -615,7 +1263,7 @@ void displayMenu()
     if (millis() >= (counter_blink + 750) && blinker == 0)
     {
       lcd.clear();
-      displayTimeSetHour();
+      displayTimeSetT1Hour();
       counter_blink = millis();
       blinker = 1;
     }
@@ -633,7 +1281,79 @@ void displayMenu()
     if (millis() >= (counter_blink + 750) && blinker == 0)
     {
       lcd.clear();
-      displayTimeSetMinute();
+      displayTimeSetT1Minute();
+      counter_blink = millis();
+      blinker = 1;
+    }
+    if (millis() >= (counter_blink + 750) && blinker == 1)
+    {
+      lcd.clear();
+      displayTimeSet();
+      counter_blink = millis();
+      blinker = 0;
+    }
+  }
+
+  if (state == 2 && btn_set == 3)
+  {
+    if (millis() >= (counter_blink + 750) && blinker == 0)
+    {
+      lcd.clear();
+      displayTimeSetT2Hour();
+      counter_blink = millis();
+      blinker = 1;
+    }
+    if (millis() >= (counter_blink + 750) && blinker == 1)
+    {
+      lcd.clear();
+      displayTimeSet();
+      counter_blink = millis();
+      blinker = 0;
+    }
+  }
+
+  if (state == 2 && btn_set == 4)
+  {
+    if (millis() >= (counter_blink + 750) && blinker == 0)
+    {
+      lcd.clear();
+      displayTimeSetT2Minute();
+      counter_blink = millis();
+      blinker = 1;
+    }
+    if (millis() >= (counter_blink + 750) && blinker == 1)
+    {
+      lcd.clear();
+      displayTimeSet();
+      counter_blink = millis();
+      blinker = 0;
+    }
+  }
+
+  if (state == 2 && btn_set == 5)
+  {
+    if (millis() >= (counter_blink + 750) && blinker == 0)
+    {
+      lcd.clear();
+      displayTimeSetT3Hour();
+      counter_blink = millis();
+      blinker = 1;
+    }
+    if (millis() >= (counter_blink + 750) && blinker == 1)
+    {
+      lcd.clear();
+      displayTimeSet();
+      counter_blink = millis();
+      blinker = 0;
+    }
+  }
+
+  if (state == 2 && btn_set == 6)
+  {
+    if (millis() >= (counter_blink + 750) && blinker == 0)
+    {
+      lcd.clear();
+      displayTimeSetT3Minute();
       counter_blink = millis();
       blinker = 1;
     }
@@ -649,6 +1369,60 @@ void displayMenu()
   if (state == 3 && btn_set == 0)
   { // state 3, choose timer on
     displayTimerSelect();
+  }
+
+  if (state == 3 && btn_set == 1)
+  {
+    if (millis() >= (counter_blink + 750) && blinker == 0)
+    {
+      lcd.clear();
+      displayTimerSelectT1Edit();
+      counter_blink = millis();
+      blinker = 1;
+    }
+    if (millis() >= (counter_blink + 750) && blinker == 1)
+    {
+      lcd.clear();
+      displayTimerSelect();
+      counter_blink = millis();
+      blinker = 0;
+    }
+  }
+
+  if (state == 3 && btn_set == 2)
+  {
+    if (millis() >= (counter_blink + 750) && blinker == 0)
+    {
+      lcd.clear();
+      displayTimerSelectT2Edit();
+      counter_blink = millis();
+      blinker = 1;
+    }
+    if (millis() >= (counter_blink + 750) && blinker == 1)
+    {
+      lcd.clear();
+      displayTimerSelect();
+      counter_blink = millis();
+      blinker = 0;
+    }
+  }
+
+  if (state == 3 && btn_set == 3)
+  {
+    if (millis() >= (counter_blink + 750) && blinker == 0)
+    {
+      lcd.clear();
+      displayTimerSelectT3Edit();
+      counter_blink = millis();
+      blinker = 1;
+    }
+    if (millis() >= (counter_blink + 750) && blinker == 1)
+    {
+      lcd.clear();
+      displayTimerSelect();
+      counter_blink = millis();
+      blinker = 0;
+    }
   }
 
   if (state == 4 && btn_set == 0)
@@ -762,7 +1536,7 @@ void buttonMenu()
       state++;
       lcd.clear();
     }
-    if (buttonRead(buttonSet) == true && state > 0 && state != 3)
+    if (buttonRead(buttonSet) == true && state > 0)
     {
       btn_set = 1;
       lcd.clear();
@@ -781,8 +1555,8 @@ void buttonMenu()
     }
     if (buttonRead(buttonSet) == true)
     {
-      /*EEPROM.put(0, temperature.threshold);
-        EEPROM.commit();*/
+      EEPROM.put(0, temperature.threshold);
+      EEPROM.commit();
       btn_set = 0;
     }
   }
@@ -855,9 +1629,209 @@ void buttonMenu()
     }
     if (buttonRead(buttonSet) == true)
     {
-      /*EEPROM.put(6, timer1.hour);
-        EEPROM.put(7, timer1.minute);
-        EEPROM.commit();*/
+      btn_set = 3;
+    }
+  }
+
+  if (state == 2 && btn_set == 3)
+  {
+    if (buttonRead(buttonUp) == true)
+    {
+      if (timer2.hour < 23)
+      {
+        timer2.hour++;
+      }
+      else
+      {
+        timer2.hour = 0;
+      }
+    }
+    if (buttonRead(buttonDown) == true)
+    {
+      if (timer2.hour > 0)
+      {
+        timer2.hour--;
+      }
+      else
+      {
+        timer2.hour = 23;
+      }
+    }
+    if (buttonRead(buttonSet) == true)
+    {
+      btn_set = 4;
+    }
+  }
+
+  if (state == 2 && btn_set == 4)
+  {
+    if (buttonRead(buttonUp) == true)
+    {
+      if (timer2.minute < 59)
+      {
+        timer2.minute++;
+      }
+      else if (timer2.hour < 23)
+      {
+        timer2.minute = 0;
+        timer2.hour++;
+      }
+      else
+      {
+        timer2.minute = 0;
+        timer2.hour = 0;
+      }
+    }
+    if (buttonRead(buttonDown) == true)
+    {
+      if (timer2.minute > 0)
+      {
+        timer2.minute--;
+      }
+      else if (timer2.hour > 0)
+      {
+        timer2.minute = 59;
+        timer2.hour--;
+      }
+      else
+      {
+        timer2.minute = 59;
+        timer2.hour = 23;
+      }
+    }
+    if (buttonRead(buttonSet) == true)
+    {
+      btn_set = 5;
+    }
+  }
+
+  if (state == 2 && btn_set == 5)
+  {
+    if (buttonRead(buttonUp) == true)
+    {
+      if (timer3.hour < 23)
+      {
+        timer3.hour++;
+      }
+      else
+      {
+        timer3.hour = 0;
+      }
+    }
+    if (buttonRead(buttonDown) == true)
+    {
+      if (timer3.hour > 0)
+      {
+        timer3.hour--;
+      }
+      else
+      {
+        timer3.hour = 23;
+      }
+    }
+    if (buttonRead(buttonSet) == true)
+    {
+      btn_set = 6;
+    }
+  }
+
+  if (state == 2 && btn_set == 6)
+  {
+    if (buttonRead(buttonUp) == true)
+    {
+      if (timer3.minute < 59)
+      {
+        timer3.minute++;
+      }
+      else if (timer3.hour < 23)
+      {
+        timer3.minute = 0;
+        timer3.hour++;
+      }
+      else
+      {
+        timer3.minute = 0;
+        timer3.hour = 0;
+      }
+    }
+    if (buttonRead(buttonDown) == true)
+    {
+      if (timer3.minute > 0)
+      {
+        timer3.minute--;
+      }
+      else if (timer3.hour > 0)
+      {
+        timer3.minute = 59;
+        timer3.hour--;
+      }
+      else
+      {
+        timer3.minute = 59;
+        timer3.hour = 23;
+      }
+    }
+    if (buttonRead(buttonSet) == true)
+    {
+      EEPROM.put(6, timer1.hour);
+      EEPROM.put(7, timer1.minute);
+      EEPROM.put(9, timer2.hour);
+      EEPROM.put(10, timer2.minute);
+      EEPROM.put(12, timer3.hour);
+      EEPROM.put(13, timer3.minute);
+      EEPROM.commit();
+      btn_set = 0;
+    }
+  }
+
+  if (state == 3 && btn_set == 1)
+  {
+    if (buttonRead(buttonUp) == true)
+    {
+      timer1.setting = 1;
+    }
+    if (buttonRead(buttonDown) == true)
+    {
+      timer1.setting = 0;
+    }
+    if (buttonRead(buttonSet) == true)
+    {
+      btn_set = 2;
+    }
+  }
+
+  if (state == 3 && btn_set == 2)
+  {
+    if (buttonRead(buttonUp) == true)
+    {
+      timer2.setting = 1;
+    }
+    if (buttonRead(buttonDown) == true)
+    {
+      timer2.setting = 0;
+    }
+    if (buttonRead(buttonSet) == true)
+    {
+      btn_set = 3;
+    }
+  }
+
+  if (state == 3 && btn_set == 3)
+  {
+    if (buttonRead(buttonUp) == true)
+    {
+      timer3.setting = 1;
+    }
+    if (buttonRead(buttonDown) == true)
+    {
+      timer3.setting = 0;
+    }
+    if (buttonRead(buttonSet) == true)
+    {
+      EEPROM.put(8, timer1.setting);
+      EEPROM.put(11, timer2.setting);
+      EEPROM.put(14, timer3.setting);
+      EEPROM.commit();
       btn_set = 0;
     }
   }
@@ -1033,8 +2007,11 @@ void setup()
   lcd.init();
   lcd.backlight();
   lcd.createChar(0, charDegree);
-  lcd.setCursor(5, 0);
-  lcd.print("MTech");
+  lcd.createChar(1, charT1);
+  lcd.createChar(2, charT2);
+  lcd.createChar(3, charT3);
+  lcd.setCursor(0, 0);
+  lcd.print("Multitechnologi");
   delay(3000);
   lcd.clear();
 }
@@ -1044,6 +2021,6 @@ void loop()
   receiveStatus();
   buttonMenu();
   displayMenu();
-  //backlightMode();
+  // backlightMode();
   sendSettings();
 }
