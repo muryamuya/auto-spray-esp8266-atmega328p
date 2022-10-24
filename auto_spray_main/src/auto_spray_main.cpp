@@ -58,6 +58,7 @@ union floatToBytes
 
 unsigned long counter_send, counter_receive, counter_blink, counter_backlight = 0;
 int state, btn_set, blinker, indx = 0;
+bool backlight_btn = true;
 
 /*
 pin GPIO 14 / D5
@@ -124,7 +125,7 @@ void factoryReset();
 void fetchEEPROM();
 bool buttonRead(int pin);
 void backlightMode();
-unsigned int minuteToMillis(unsigned int minute);
+unsigned long minuteToMillis(unsigned long minute);
 byte decToBcd(byte val);
 byte bcdToDec(byte val);
 void setDS3231time(byte second, byte minute, byte hour, byte dayOfWeek, byte dayOfMonth, byte month, byte year);
@@ -160,7 +161,7 @@ void buttonMenu();
 
 void sendSettings()
 { // send per sec
-  if (millis() >= (counter_send + 1000))
+  if (millis() - counter_send >= 1000)
   {
     Wire.beginTransmission(ATM_ADDRESS);
     fl2b.value = temperature.threshold;
@@ -184,7 +185,7 @@ void sendSettings()
 
 void receiveStatus()
 { // receive per sec
-  if (millis() >= (counter_receive + 1000))
+  if (millis() - counter_receive >= 1000)
   {
     Wire.requestFrom(ATM_ADDRESS, 4);
     while (Wire.available())
@@ -243,71 +244,54 @@ bool buttonRead(int pin)
     if (digitalRead(pin) == LOW)
     {
       lastDebounceTime = millis();
+      backlight_btn = true;
       return true;
     }
     else
+    {
+      backlight_btn = false;
       return false;
+    }
   }
   else
+  {
     return false;
+  }
 }
 
 void backlightMode()
 {
   if (deviceSet.backlight == 0)
   {
-    lcd.backlight();
+    lcd.setBacklight(HIGH);
   }
 
-  if (deviceSet.backlight == 1)
+  if (backlight_btn == true && deviceSet.backlight != 0 && deviceSet.backlight != 4)
   {
-    if (buttonRead(buttonUp) == true || buttonRead(buttonDown) == true || buttonRead(buttonSet) == true)
-    {
-      lcd.backlight();
-      counter_backlight = millis();
-    }
-    if (millis() > counter_backlight + 3000)
-    {
-      lcd.noBacklight();
-    }
+    lcd.setBacklight(HIGH);
+    counter_backlight = millis();
   }
 
-  if (deviceSet.backlight == 2)
-  {
-    if (buttonRead(buttonUp) == true || buttonRead(buttonDown) == true || buttonRead(buttonSet) == true)
-    {
-      lcd.backlight();
-      counter_backlight = millis();
-    }
-    if (millis() > counter_backlight + 5000)
-    {
-      lcd.noBacklight();
-    }
+  if (deviceSet.backlight == 1 && backlight_btn == false && millis() - counter_backlight > 3000){
+    lcd.setBacklight(LOW);
   }
 
-  if (deviceSet.backlight == 3)
-  {
-    if (buttonRead(buttonUp) == true || buttonRead(buttonDown) == true || buttonRead(buttonSet) == true)
-    {
-      lcd.backlight();
-      counter_backlight = millis();
-    }
-    if (millis() > counter_backlight + 10000)
-    {
-      lcd.noBacklight();
-    }
+  if (deviceSet.backlight == 2 && backlight_btn == false && millis() - counter_backlight > 5000){
+    lcd.setBacklight(LOW);
+  }
+
+  if (deviceSet.backlight == 3 && backlight_btn == false && millis() - counter_backlight > 10000){
+    lcd.setBacklight(LOW);
   }
 
   if (deviceSet.backlight == 4)
   {
-    lcd.noBacklight();
+    lcd.setBacklight(LOW);
   }
 }
 
-unsigned int minuteToMillis(unsigned int minute)
+unsigned long minuteToMillis(unsigned long minute)
 {
-  /*unsigned int min;
-  min = minute * 60 * 1000;*/
   return minute * 60 * 1000;
 }
 
@@ -1277,14 +1261,14 @@ void displayMenu()
 
   if (state == 1 && btn_set == 1)
   {
-    if (millis() >= (counter_blink + 750) && blinker == 0)
+    if (millis() - counter_blink > 750 && blinker == 0)
     {
       lcd.clear();
       displayTempSetEdit();
       counter_blink = millis();
       blinker = 1;
     }
-    if (millis() >= (counter_blink + 750) && blinker == 1)
+    if (millis() - counter_blink > 750 && blinker == 1)
     {
       lcd.clear();
       displayTempSet();
@@ -1300,14 +1284,14 @@ void displayMenu()
 
   if (state == 2 && btn_set == 1)
   {
-    if (millis() >= (counter_blink + 750) && blinker == 0)
+    if (millis() - counter_blink > 750 && blinker == 0)
     {
       lcd.clear();
       displayTimeSetT1Hour();
       counter_blink = millis();
       blinker = 1;
     }
-    if (millis() >= (counter_blink + 750) && blinker == 1)
+    if (millis() - counter_blink > 750 && blinker == 1)
     {
       lcd.clear();
       displayTimeSet();
@@ -1318,14 +1302,14 @@ void displayMenu()
 
   if (state == 2 && btn_set == 2)
   {
-    if (millis() >= (counter_blink + 750) && blinker == 0)
+    if (millis() - counter_blink > 750 && blinker == 0)
     {
       lcd.clear();
       displayTimeSetT1Minute();
       counter_blink = millis();
       blinker = 1;
     }
-    if (millis() >= (counter_blink + 750) && blinker == 1)
+    if (millis() - counter_blink > 750 && blinker == 1)
     {
       lcd.clear();
       displayTimeSet();
@@ -1336,14 +1320,14 @@ void displayMenu()
 
   if (state == 2 && btn_set == 3)
   {
-    if (millis() >= (counter_blink + 750) && blinker == 0)
+    if (millis() - counter_blink > 750 && blinker == 0)
     {
       lcd.clear();
       displayTimeSetT2Hour();
       counter_blink = millis();
       blinker = 1;
     }
-    if (millis() >= (counter_blink + 750) && blinker == 1)
+    if (millis() - counter_blink > 750 && blinker == 1)
     {
       lcd.clear();
       displayTimeSet();
@@ -1354,14 +1338,14 @@ void displayMenu()
 
   if (state == 2 && btn_set == 4)
   {
-    if (millis() >= (counter_blink + 750) && blinker == 0)
+    if (millis() - counter_blink > 750 && blinker == 0)
     {
       lcd.clear();
       displayTimeSetT2Minute();
       counter_blink = millis();
       blinker = 1;
     }
-    if (millis() >= (counter_blink + 750) && blinker == 1)
+    if (millis() - counter_blink > 750 && blinker == 1)
     {
       lcd.clear();
       displayTimeSet();
@@ -1372,14 +1356,14 @@ void displayMenu()
 
   if (state == 2 && btn_set == 5)
   {
-    if (millis() >= (counter_blink + 750) && blinker == 0)
+    if (millis() - counter_blink > 750 && blinker == 0)
     {
       lcd.clear();
       displayTimeSetT3Hour();
       counter_blink = millis();
       blinker = 1;
     }
-    if (millis() >= (counter_blink + 750) && blinker == 1)
+    if (millis() - counter_blink > 750 && blinker == 1)
     {
       lcd.clear();
       displayTimeSet();
@@ -1390,14 +1374,14 @@ void displayMenu()
 
   if (state == 2 && btn_set == 6)
   {
-    if (millis() >= (counter_blink + 750) && blinker == 0)
+    if (millis() - counter_blink > 750 && blinker == 0)
     {
       lcd.clear();
       displayTimeSetT3Minute();
       counter_blink = millis();
       blinker = 1;
     }
-    if (millis() >= (counter_blink + 750) && blinker == 1)
+    if (millis() - counter_blink > 750 && blinker == 1)
     {
       lcd.clear();
       displayTimeSet();
@@ -1413,14 +1397,14 @@ void displayMenu()
 
   if (state == 3 && btn_set == 1)
   {
-    if (millis() >= (counter_blink + 750) && blinker == 0)
+    if (millis() - counter_blink > 750 && blinker == 0)
     {
       lcd.clear();
       displayTimerSelectT1Edit();
       counter_blink = millis();
       blinker = 1;
     }
-    if (millis() >= (counter_blink + 750) && blinker == 1)
+    if (millis() - counter_blink > 750 && blinker == 1)
     {
       lcd.clear();
       displayTimerSelect();
@@ -1431,14 +1415,14 @@ void displayMenu()
 
   if (state == 3 && btn_set == 2)
   {
-    if (millis() >= (counter_blink + 750) && blinker == 0)
+    if (millis() - counter_blink > 750 && blinker == 0)
     {
       lcd.clear();
       displayTimerSelectT2Edit();
       counter_blink = millis();
       blinker = 1;
     }
-    if (millis() >= (counter_blink + 750) && blinker == 1)
+    if (millis() - counter_blink > 750 && blinker == 1)
     {
       lcd.clear();
       displayTimerSelect();
@@ -1449,14 +1433,14 @@ void displayMenu()
 
   if (state == 3 && btn_set == 3)
   {
-    if (millis() >= (counter_blink + 750) && blinker == 0)
+    if (millis() - counter_blink > 750 && blinker == 0)
     {
       lcd.clear();
       displayTimerSelectT3Edit();
       counter_blink = millis();
       blinker = 1;
     }
-    if (millis() >= (counter_blink + 750) && blinker == 1)
+    if (millis() - counter_blink > 750 && blinker == 1)
     {
       lcd.clear();
       displayTimerSelect();
@@ -1472,14 +1456,14 @@ void displayMenu()
 
   if (state == 4 && btn_set == 1)
   {
-    if (millis() >= (counter_blink + 750) && blinker == 0)
+    if (millis() - counter_blink > 750 && blinker == 0)
     {
       lcd.clear();
       displayDurationSetEdit();
       counter_blink = millis();
       blinker = 1;
     }
-    if (millis() >= (counter_blink + 750) && blinker == 1)
+    if (millis() - counter_blink > 750 && blinker == 1)
     {
       lcd.clear();
       displayDurationSet();
@@ -1495,14 +1479,14 @@ void displayMenu()
 
   if (state == 5 && btn_set == 1)
   {
-    if (millis() >= (counter_blink + 750) && blinker == 0)
+    if (millis() - counter_blink > 750 && blinker == 0)
     {
       lcd.clear();
       displayBacklightSettingsEdit();
       counter_blink = millis();
       blinker = 1;
     }
-    if (millis() >= (counter_blink + 750) && blinker == 1)
+    if (millis() - counter_blink > 750 && blinker == 1)
     {
       lcd.clear();
       displayBacklightSettings();
@@ -1518,14 +1502,14 @@ void displayMenu()
 
   if (state == 6 && btn_set == 1)
   {
-    if (millis() >= (counter_blink + 750) && blinker == 0)
+    if (millis() - counter_blink > 750 && blinker == 0)
     {
       lcd.clear();
       displayRTCsetHour();
       counter_blink = millis();
       blinker = 1;
     }
-    if (millis() >= (counter_blink + 750) && blinker == 1)
+    if (millis() - counter_blink > 750 && blinker == 1)
     {
       lcd.clear();
       displayRTCset();
@@ -1536,14 +1520,14 @@ void displayMenu()
 
   if (state == 6 && btn_set == 2)
   {
-    if (millis() >= (counter_blink + 750) && blinker == 0)
+    if (millis() - counter_blink > 750 && blinker == 0)
     {
       lcd.clear();
       displayRTCsetMinute();
       counter_blink = millis();
       blinker = 1;
     }
-    if (millis() >= (counter_blink + 750) && blinker == 1)
+    if (millis() - counter_blink > 750 && blinker == 1)
     {
       lcd.clear();
       displayRTCset();
@@ -2054,6 +2038,7 @@ void setup()
   lcd.print("Multitechnologi");
   delay(3000);
   lcd.clear();
+  //Serial.begin(9600);
 }
 
 void loop()
@@ -2061,7 +2046,7 @@ void loop()
   receiveStatus();
   buttonMenu();
   displayMenu();
-  // backlightMode();
+  backlightMode();
   sendSettings();
-  debugging();
+  //debugging();
 }

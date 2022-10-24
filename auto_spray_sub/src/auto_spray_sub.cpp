@@ -47,8 +47,8 @@ union floatToBytes
 
 // Declare functions ---------------------------------------------------
 
-unsigned int minuteToMillis(unsigned int minute);
-unsigned int hourToMillis(unsigned int hour);
+unsigned long minuteToMillis(unsigned long minute);
+unsigned long hourToMillis(unsigned long hour);
 void receiveSettings();
 void sendStatus();
 void checkTemp();
@@ -57,17 +57,13 @@ void debugging();
 
 // Utility function ---------------------------------------------------------
 
-unsigned int minuteToMillis(unsigned int minute)
+unsigned long minuteToMillis(unsigned long minute)
 {
-  /*unsigned int min;
-  min = minute * 60 * 1000;*/
   return minute * 60 * 1000;
 }
 
-unsigned int hourToMillis(unsigned int hour)
+unsigned long hourToMillis(unsigned long hour)
 {
-  /*unsigned int hr;
-  hr = hour * 60 * 60 * 1000;*/
   return hour * 60 * 60 * 1000;
 }
 
@@ -114,7 +110,6 @@ void checkTemp()
   temperature.celcius = sensors.getTempCByIndex(0);
   if (temperature.celcius >= temperature.threshold && valve1 == 0 && valve2 == 0)
   {
-    time_now = millis();
     digitalWrite(relay2, HIGH);
     delay(500);
     digitalWrite(relay1, HIGH);
@@ -151,7 +146,7 @@ void checkTime()
     digitalWrite(relay1, HIGH);
     valve2 = 1;
   }
-  if (valve1 == 0 && valve2 == 1 && millis() >= time_now + minuteToMillis(deviceSet.duration))
+  if (valve1 == 0 && valve2 == 1 && millis() - time_now >= minuteToMillis(deviceSet.duration))
   {
     digitalWrite(relay1, LOW);
     delay(500);
