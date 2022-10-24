@@ -124,10 +124,12 @@ void factoryReset();
 void fetchEEPROM();
 bool buttonRead(int pin);
 void backlightMode();
+unsigned int minuteToMillis(unsigned int minute);
 byte decToBcd(byte val);
 byte bcdToDec(byte val);
 void setDS3231time(byte second, byte minute, byte hour, byte dayOfWeek, byte dayOfMonth, byte month, byte year);
 void readDS3231time(byte *second, byte *minute, byte *hour, byte *dayOfWeek, byte *dayOfMonth, byte *month, byte *year);
+void debugging();
 void displayMain();
 void displayTempSet();
 void displayTempSetEdit();
@@ -302,6 +304,13 @@ void backlightMode()
   }
 }
 
+unsigned int minuteToMillis(unsigned int minute)
+{
+  /*unsigned int min;
+  min = minute * 60 * 1000;*/
+  return minute * 60 * 1000;
+}
+
 byte decToBcd(byte val)
 { // Convert normal decimal numbers to binary coded decimal
   return ((val / 10 * 16) + (val % 10));
@@ -345,6 +354,37 @@ void readDS3231time(byte *second, // Read from RTC
   *dayOfMonth = bcdToDec(Wire.read());
   *month = bcdToDec(Wire.read());
   *year = bcdToDec(Wire.read());
+}
+
+void debugging()
+{
+  Serial.println(temperature.celcius);
+  Serial.print("RTC: ");
+  Serial.print(RTC.hour);
+  Serial.print(":");
+  Serial.println(RTC.minute);
+  Serial.print("Timer1: ");
+  Serial.print(timer1.hour);
+  Serial.print(":");
+  Serial.println(timer1.minute);
+  Serial.println(timer1.setting);
+  Serial.print("Timer2: ");
+  Serial.print(timer2.hour);
+  Serial.print(":");
+  Serial.println(timer2.minute);
+  Serial.println(timer2.setting);
+  Serial.print("Timer3: ");
+  Serial.print(timer3.hour);
+  Serial.print(":");
+  Serial.println(timer3.minute);
+  Serial.println(timer3.setting);
+  Serial.print("Duration: ");
+  Serial.println(minuteToMillis(deviceSet.duration));
+  Serial.print("Threshold: ");
+  Serial.println(temperature.threshold);
+  Serial.print("Backlight: ");
+  Serial.println(deviceSet.backlight);
+  Serial.println("-----------------------------");
 }
 
 // Menu item function ----------------------------------------------------------------
@@ -2023,4 +2063,5 @@ void loop()
   displayMenu();
   // backlightMode();
   sendSettings();
+  debugging();
 }
