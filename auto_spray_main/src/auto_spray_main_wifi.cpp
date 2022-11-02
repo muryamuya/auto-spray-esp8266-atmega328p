@@ -2,6 +2,10 @@
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
 #include <EEPROM.h>
+#include "LittleFS.h"
+#include <ESP8266Wifi.h>
+#include "ESPAsyncWebServer.h"
+#include <DNSServer.h>
 
 // Declare variables ---------------------------------------------------
 
@@ -28,6 +32,37 @@ Arduino address 0x08
 #define RTC_ADDRESS 0x68
 #define LCD_ADDRESS 0x27
 #define ATM_ADDRESS 0x08
+
+/*
+char ssid[32] = "ESP";
+char password[63] = "123456789";
+*/
+
+const char *ssid = "ESP-MTech";
+
+IPAddress APIP(192, 168, 1, 1);
+IPAddress subnet_mask(255, 255, 255, 0);
+
+const byte WEB_PORT = 80;
+const byte DNS_PORT = 53;
+
+DNSServer dnsServer;
+AsyncWebServer webServer(WEB_PORT);
+
+class CaptiveRequestHandler : public AsyncWebHandler {
+public:
+  CaptiveRequestHandler() {}
+  virtual ~CaptiveRequestHandler() {}
+
+  bool canHandle(AsyncWebServerRequest *request){
+    //request->addInterestingHeader("ANY");
+    return true;
+  }
+
+  void handleRequest(AsyncWebServerRequest *request) {
+    request->send(LittleFS, "/index.html","text/html", false);
+  }
+};
 
 struct temperature_set
 {
@@ -156,6 +191,7 @@ void displayFactoryReset();
 void displayFactoryResetConfirm();
 void displayMenu();
 void buttonMenu();
+void setupServer();
 
 // I2C Comms -----------------------------------------------------------
 
@@ -272,15 +308,18 @@ void backlightMode()
     counter_backlight = millis();
   }
 
-  if (deviceSet.backlight == 1 && backlight_btn == false && millis() - counter_backlight > 3000){
+  if (deviceSet.backlight == 1 && backlight_btn == false && millis() - counter_backlight > 3000)
+  {
     lcd.setBacklight(LOW);
   }
 
-  if (deviceSet.backlight == 2 && backlight_btn == false && millis() - counter_backlight > 5000){
+  if (deviceSet.backlight == 2 && backlight_btn == false && millis() - counter_backlight > 5000)
+  {
     lcd.setBacklight(LOW);
   }
 
-  if (deviceSet.backlight == 3 && backlight_btn == false && millis() - counter_backlight > 10000){
+  if (deviceSet.backlight == 3 && backlight_btn == false && millis() - counter_backlight > 10000)
+  {
     lcd.setBacklight(LOW);
   }
 
@@ -2018,12 +2057,38 @@ void buttonMenu()
   }
 }
 
+// Web function ----------------------------------------------
+
+void setupServer(){
+  webServer.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
+      request->send(LittleFS, "/index.html","text/html", false);
+  });
+}
+
 // Main function ---------------------------------------------
 
 void setup()
 {
+  //Serial.begin(9600);
   EEPROM.begin(EEPROM_SIZE);
   fetchEEPROM();
+  /*
+  if(!LittleFS.begin()){
+    Serial.println("An Error has occurred while mounting LittleFS");
+    return;
+  }
+  File file = LittleFS.open("/index.html", "r");
+  if(!file){
+    Serial.println("Failed to open file for reading");
+    return;
+  }
+  
+  Serial.println("File Content:");
+  while(file.available()){
+    Serial.write(file.read());
+  }
+  file.close();
+  */
   Wire.begin(1);
   pinMode(buttonUp, INPUT_PULLUP);
   pinMode(buttonDown, INPUT_PULLUP);
@@ -2038,7 +2103,13 @@ void setup()
   lcd.print("Multitechnologi");
   delay(3000);
   lcd.clear();
-  //Serial.begin(9600);
+  WiFi.mode(WIFI_AP);
+  WiFi.softAPConfig(APIP, APIP, subnet_mask);
+  WiFi.softAP(ssid);
+  dnsServer.start(DNS_PORT, "*", WiFi.softAPIP());
+  setupServer();
+  webServer.addHandler(new CaptiveRequestHandler()).setFilter(ON_AP_FILTER);
+  webServer.begin();
 }
 
 void loop()
@@ -2048,5 +2119,5 @@ void loop()
   displayMenu();
   backlightMode();
   sendSettings();
-  //debugging();
+  // debugging();
 }
