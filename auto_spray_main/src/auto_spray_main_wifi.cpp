@@ -1,10 +1,11 @@
-#include <Arduino.h>
+#include "Arduino.h"
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
 #include <EEPROM.h>
-#include "LittleFS.h"
+#include <LittleFS.h>
 #include <ESP8266Wifi.h>
-#include "ESPAsyncWebServer.h"
+#include <ESPAsyncTCP.h>
+#include <ESPAsyncWebServer.h>
 #include <DNSServer.h>
 
 // Declare variables ---------------------------------------------------
@@ -22,23 +23,18 @@ timer2.setting = byte, address at 11
 timer3.hour = byte, address at 12
 timer3.minute = byte, address at 13
 timer3.setting = byte, address at 14
+deviceSet.ssid = char array, address at 15 len, address at 16-47 data
+deviceSet.pass = char array, address at 48 len, address at 49-112 data
 
 RTC Address 0x68
 LCD address 0x27
 Arduino address 0x08
 */
 
-#define EEPROM_SIZE 32
+#define EEPROM_SIZE 128
 #define RTC_ADDRESS 0x68
 #define LCD_ADDRESS 0x27
 #define ATM_ADDRESS 0x08
-
-/*
-char ssid[32] = "ESP";
-char password[63] = "123456789";
-*/
-
-const char *ssid = "ESP-MTech";
 
 IPAddress APIP(192, 168, 1, 1);
 IPAddress subnet_mask(255, 255, 255, 0);
@@ -49,18 +45,20 @@ const byte DNS_PORT = 53;
 DNSServer dnsServer;
 AsyncWebServer webServer(WEB_PORT);
 
-class CaptiveRequestHandler : public AsyncWebHandler {
+class CaptiveRequestHandler : public AsyncWebHandler
+{
 public:
   CaptiveRequestHandler() {}
   virtual ~CaptiveRequestHandler() {}
 
-  bool canHandle(AsyncWebServerRequest *request){
-    //request->addInterestingHeader("ANY");
+  bool canHandle(AsyncWebServerRequest *request)
+  {
     return true;
   }
 
-  void handleRequest(AsyncWebServerRequest *request) {
-    request->send(LittleFS, "/index.html","text/html", false);
+  void handleRequest(AsyncWebServerRequest *request)
+  {
+    request->redirect("/");
   }
 };
 
@@ -83,6 +81,8 @@ struct device_settings
 {
   byte backlight; // 0: on, 1: 3 sec, 2: 5 sec, 3: 10 sec, 4: off
   byte duration;  // spray duration
+  char ssid[32];
+  char pass[63];
 } deviceSet;
 
 union floatToBytes
@@ -92,8 +92,9 @@ union floatToBytes
 } fl2b;
 
 unsigned long counter_send, counter_receive, counter_blink, counter_backlight = 0;
-int state, btn_set, blinker, indx = 0;
+byte state, btn_set, blinker, indx, len = 0;
 bool backlight_btn = true;
+bool restart = false;
 
 /*
 pin GPIO 14 / D5
@@ -157,6 +158,7 @@ byte charT3[8] = {
 void sendSettings();
 void receiveStatus();
 void factoryReset();
+void writeChartoEEPROM();
 void fetchEEPROM();
 bool buttonRead(int pin);
 void backlightMode();
@@ -191,6 +193,8 @@ void displayFactoryReset();
 void displayFactoryResetConfirm();
 void displayMenu();
 void buttonMenu();
+String statusTimer();
+String processor();
 void setupServer();
 
 // I2C Comms -----------------------------------------------------------
@@ -253,8 +257,22 @@ void factoryReset()
   EEPROM.put(12, 0);
   EEPROM.put(13, 0);
   EEPROM.put(14, 0);
+  strcpy(deviceSet.ssid, "ESP Mtech");
+  len = strlen(deviceSet.ssid);
+  EEPROM.put(15, len);
+  for (int i = 0; i < len; i++)
+  {
+    EEPROM.put(16 + i, deviceSet.ssid[i]);
+  }
+  strcpy(deviceSet.pass, "1234567890");
+  len = strlen(deviceSet.pass);
+  EEPROM.put(48, len);
+  for (int i = 0; i < len; i++)
+  {
+    EEPROM.put(49 + i, deviceSet.pass[i]);
+  }
   EEPROM.commit();
-  fetchEEPROM();
+  restart = true;
 }
 
 void fetchEEPROM()
@@ -271,6 +289,17 @@ void fetchEEPROM()
   EEPROM.get(12, timer3.hour);
   EEPROM.get(13, timer3.minute);
   EEPROM.get(14, timer3.setting);
+  byte len;
+  EEPROM.get(15, len);
+  for (int i = 0; i < len; i++)
+  {
+    EEPROM.get(16 + i, deviceSet.ssid[i]);
+  }
+  EEPROM.get(48, len);
+  for (int i = 0; i < len; i++)
+  {
+    EEPROM.get(49 + i, deviceSet.pass[i]);
+  }
 }
 
 bool buttonRead(int pin)
@@ -1909,7 +1938,7 @@ void buttonMenu()
       }
       else
       {
-        deviceSet.duration = 0;
+        deviceSet.duration = 1;
       }
     }
     if (buttonRead(buttonDown) == true)
@@ -2059,36 +2088,113 @@ void buttonMenu()
 
 // Web function ----------------------------------------------
 
-void setupServer(){
-  webServer.on("/", HTTP_GET, [](AsyncWebServerRequest *request){
-      request->send(LittleFS, "/index.html","text/html", false);
-  });
+String statusTimer(byte status)
+{
+  if (status == 1)
+  {
+    return "On";
+  }
+  else
+    return "Off";
+}
+
+String processor(const String &var)
+{
+  if (var == "TEMPPLACEHOLDER")
+  {
+    return String(temperature.celcius);
+  }
+  if (var == "TIMEPLACEHOLDER")
+  {
+    return String(RTC.hour + ":" + RTC.minute);
+  }
+  if (var == "THRESHOLDPLACEHOLDER")
+  {
+    return String(temperature.threshold);
+  }
+  if (var == "TIMER1PLACEHOLDER")
+  {
+    return String(timer1.hour + ":" + timer1.minute);
+  }
+  if (var == "STATUS1PLACEHOLDER")
+  {
+    return statusTimer(timer1.setting);
+  }
+  if (var == "TIMER2PLACEHOLDER")
+  {
+    return String(timer2.hour + ":" + timer2.minute);
+  }
+  if (var == "STATUS2PLACEHOLDER")
+  {
+    return statusTimer(timer2.setting);
+  }
+  if (var == "TIMER3PLACEHOLDER")
+  {
+    return String(timer3.hour + ":" + timer3.minute);
+  }
+  if (var == "STATUS3PLACEHOLDER")
+  {
+    return statusTimer(timer3.setting);
+  }
+  if (var == "DURATIONPLACEHOLDER")
+  {
+    return String(deviceSet.duration);
+  }
+  return String();
+}
+
+void setupServer()
+{
+  webServer.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
+               { request->send(LittleFS, "/index.html", String(), false, processor); });
+
+  webServer.serveStatic("/", LittleFS, "/");
+
+  webServer.on("/temp", HTTP_GET, [](AsyncWebServerRequest *request)
+               {
+    fl2b.value = temperature.celcius;
+    request->send_P(200, "text/plain", fl2b.text); });
+
+  webServer.on("/time", HTTP_GET, [](AsyncWebServerRequest *request)
+               { request->send_P(200, "text/plain", String(RTC.hour + ":" + RTC.minute).c_str()); });
+
+  webServer.on("/wifi", HTTP_POST, [](AsyncWebServerRequest *request)
+               {
+    int params = request->params();
+    for (int i=0; i<params; i++){
+      AsyncWebParameter* p = request->getParam(i);
+      if(p->isPost()){
+        if (p->name() == "ssid") {
+          strcpy(deviceSet.ssid, p->value().c_str());
+          len = strlen(deviceSet.ssid);
+          EEPROM.put(15, len);
+          for(int i=0; i<len; i++){
+            EEPROM.put(16 + i, deviceSet.ssid[i]);
+          }
+          }
+        if (p->name() == "pass") {
+          strcpy(deviceSet.pass, p->value().c_str());
+          len = strlen(deviceSet.pass);
+          EEPROM.put(48, len);
+          for(int i=0; i<len; i++){
+            EEPROM.put(49 + i, deviceSet.pass[i]);
+          }
+          }
+        EEPROM.commit();
+        request->send(200, "text/plain", "Done, ESP will restart.");
+        restart = true;
+      }
+    } });
 }
 
 // Main function ---------------------------------------------
 
 void setup()
 {
-  //Serial.begin(9600);
+  LittleFS.begin();
+  // Serial.begin(9600);
   EEPROM.begin(EEPROM_SIZE);
   fetchEEPROM();
-  /*
-  if(!LittleFS.begin()){
-    Serial.println("An Error has occurred while mounting LittleFS");
-    return;
-  }
-  File file = LittleFS.open("/index.html", "r");
-  if(!file){
-    Serial.println("Failed to open file for reading");
-    return;
-  }
-  
-  Serial.println("File Content:");
-  while(file.available()){
-    Serial.write(file.read());
-  }
-  file.close();
-  */
   Wire.begin(1);
   pinMode(buttonUp, INPUT_PULLUP);
   pinMode(buttonDown, INPUT_PULLUP);
@@ -2105,9 +2211,9 @@ void setup()
   lcd.clear();
   WiFi.mode(WIFI_AP);
   WiFi.softAPConfig(APIP, APIP, subnet_mask);
-  WiFi.softAP(ssid);
-  dnsServer.start(DNS_PORT, "*", WiFi.softAPIP());
+  WiFi.softAP(deviceSet.ssid, deviceSet.pass);
   setupServer();
+  dnsServer.start(DNS_PORT, "*", WiFi.softAPIP());
   webServer.addHandler(new CaptiveRequestHandler()).setFilter(ON_AP_FILTER);
   webServer.begin();
 }
@@ -2119,5 +2225,11 @@ void loop()
   displayMenu();
   backlightMode();
   sendSettings();
+  dnsServer.processNextRequest();
+  if (restart)
+  {
+    delay(5000);
+    ESP.restart();
+  }
   // debugging();
 }

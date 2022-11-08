@@ -5,136 +5,133 @@
   <title>ESP Control Panel</title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width" , initial-scale="1">
-  <link rel="stylesheet" href="bootstrap.min.css">
+  <link rel="stylesheet" type="text/css" href="bootstrap.min.css">
   <script src="bootstrap.bundle.min.js"></script>
 </head>
 
-<header>
-  <div class="bg-primary text-white p-3" style="text-align: center;">
-    <img src="logo.png" alt="logo" style="width: 94px; height: 72px;">
-  </div>
-</header>
-
-<nav class="navbar navbar-expand-sm bg-light justify-content-center" style="text-align: center;">
-    <ul class="navbar-nav">
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+  <div class="container p-1">
+    <a class="navbar-brand" href="#">
+      <img src="logo.png" alt="logo" width="39" height="30" class="d-inline-block align-top" alt="">
+      <span class="navbar-brand p-2">Multitechnologi</span>
+    </a>
+    <ul class="nav nav-pills">
       <li class="nav-item">
-        <a class="nav-link" onclick="toggleMain()">Status</a>
+        <a class="nav-link active" data-bs-toggle="pill" href="#home">Status</a>
       </li>
       <li class="nav-item">
-        <a class="nav-link" onclick="toggleSettings()">Pengaturan</a>
+        <a class="nav-link" data-bs-toggle="pill" href="#settings">Pengaturan</a>
       </li>
     </ul>
+  </div>
 </nav>
 
 <body>
-  <div id="mainMenu" style="display: block;">
-    <div class="container p-4">
-      <table class="table">
-        <tbody>
-          <tr>
-            <td>Temperatur</td>
-            <td>%TEMPPLACEHOLDER% °C</td>
-          </tr>
-          <tr>
-            <td>Waktu sekarang</td>
-            <td>%TIMEPLACEHOLDER%</td>
-          </tr>
-          <tr>
-            <td>Batas temperatur</td>
-            <td>%THRESHOLDPLACEHOLDER% °C</td>
-          </tr>
-          <tr>
-            <td>Timer 1 - %STATUS1PLACEHOLDER%</td>
-            <td>%TIMER1PLACEHOLDER%</td>
-          </tr>
-          <tr>
-            <td>Timer 2 - %STATUS2PLACEHOLDER%</td>
-            <td>%TIMER2PLACEHOLDER%</td>
-          </tr>
-          <tr>
-            <td>Timer 3 - %STATUS3PLACEHOLDER%</td>
-            <td>%TIMER3PLACEHOLDER%</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-  <div id="settingsMenu" style="display: none;">
-    <div class="container p-4">
-      <div class="row">
-        <form>
-          <div class="row my-2">
-            <label for="TempThresh" class="form-label">Batas temperatur :</label>
-            <div class="input-group">
-              <input type="number" step="0.1" class="form-control" id="TempThresh" name="TempThresh"
-                value="%THRESHOLDPLACEHOLDER%" required><br>
-              <span class="input-group-text">°C</span>
-            </div>
-          </div>
-          <div class="row my-2">
-            <label for="T1" class="form-label">Timer 1 :</label>
-            <div class="input-group">
-              <input type="time" class="form-control" id="T1" name="T1" value="%TIMER1PLACEHOLDER%" required>
-              <div class="input-group-text">
-                <input type="checkbox" id="statusT1" name="statusT1" value="yes">
-              </div>
-            </div>
-          </div>
-          <div class="row my-2">
-            <label for="T2" class="form-label">Timer 2 :</label>
-            <div class="input-group">
-              <input type="time" class="form-control" id="T2" name="T2" value="%TIMER2PLACEHOLDER%" required>
-              <div class="input-group-text">
-                <input type="checkbox" id="statusT2" name="statusT2" value="yes">
-              </div>
-            </div>
-          </div>
-          <div class="row my-2">
-            <label for="T3" class="form-label">Timer 3 :</label>
-            <div class="input-group">
-              <input type="time" class="form-control" id="T3" name="T3" value="%TIMER3PLACEHOLDER%" required>
-              <div class="input-group-text">
-                <input type="checkbox" id="statusT3" name="statusT3" value="yes">
-              </div>
-            </div>
-          </div>
-          <div class="row my-4">
-            <div class="col">
-              <button class="btn btn-success" type="submit">Simpan</button>
-              <button class="btn btn-danger" type="reset">Reset</button>
-            </div>
-          </div>
-        </form>
-      </div>
-      <div class="row">
-        <form>
-          <div class="input-group">
-            <input type="password" class="form-control" placeholder="Ubah password WiFi" name="pass">
-            <button class="btn btn-success" type="submit">Update</button>
-          </div>
-        </form>
+  <div class="tab-content">
+    <div class="tab-pane container active" id="home">
+      <div class="container p-4">
+        <table class="table">
+          <tbody>
+            <tr>
+              <td>Temperatur</td>
+              <td><span id="temperature">%TEMPPLACEHOLDER%</span> °C</td>
+            </tr>
+            <tr>
+              <td>Waktu sekarang</td>
+              <td id="time">%TIMEPLACEHOLDER%</td>
+            </tr>
+            <tr>
+              <td>Batas temperatur</td>
+              <td><span id="thresh">%THRESHOLDPLACEHOLDER%</span> °C</td>
+            </tr>
+            <tr>
+              <td>Timer 1 - <span id="stT1">%STATUS1PLACEHOLDER%</span></td>
+              <td id="rpT1">%TIMER1PLACEHOLDER%</td>
+            </tr>
+            <tr>
+              <td>Timer 2 - <span id="stT2">%STATUS2PLACEHOLDER%</span></td>
+              <td id="rpT2">%TIMER2PLACEHOLDER%</td>
+            </tr>
+            <tr>
+              <td>Timer 3 - <span id="stT3">%STATUS3PLACEHOLDER%</span></td>
+              <td id="rpT3">%TIMER3PLACEHOLDER%</td>
+            </tr>
+            <tr>
+              <td>Durasi nyala penyiram</td>
+              <td id="drt">%DURATIONPLACEHOLDER%</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
+    <div class="tab-pane container fade" id="settings">
+      <div class="container p-4">
+        <div class="row">
+          <form action="/settings" method="post">
+            <div class="row my-2">
+              <div class="input-group">
+                <span class="input-group-text">Batas temperatur</span>
+                <input type="number" step="0.1" class="form-control" id="TempThresh" name="TempThresh"
+                  value="%THRESHOLDPLACEHOLDER%" required><br>
+                <span class="input-group-text">°C</span>
+              </div>
+            </div>
+            <div class="row my-2">
+              <div class="input-group">
+                <span class="input-group-text">Timer 1</span>
+                <input type="time" class="form-control" id="T1" name="T1" value="%TIMER1PLACEHOLDER%" required>
+                <div class="input-group-text">
+                  <input type="checkbox" id="statusT1" name="statusT1" value="yes">
+                </div>
+              </div>
+            </div>
+            <div class="row my-2">
+              <div class="input-group">
+                <span class="input-group-text">Timer 2</span>
+                <input type="time" class="form-control" id="T2" name="T2" value="%TIMER2PLACEHOLDER%" required>
+                <div class="input-group-text">
+                  <input type="checkbox" id="statusT2" name="statusT2" value="yes">
+                </div>
+              </div>
+            </div>
+            <div class="row my-2">
+              <div class="input-group">
+                <span class="input-group-text">Timer 3</span>
+                <input type="time" class="form-control" id="T3" name="T3" value="%TIMER3PLACEHOLDER%" required>
+                <div class="input-group-text">
+                  <input type="checkbox" id="statusT3" name="statusT3" value="yes">
+                </div>
+              </div>
+            </div>
+            <div class="row my-2">
+              <div class="input-group">
+                <span class="input-group-text">Durasi nyala penyiram</span>
+                <input type="number" min="1" max="60" class="form-control" id="duration" name="duration"
+                  value="%DURATIONPLACEHOLDER%" required><br>
+                <span class="input-group-text">Menit</span>
+              </div>
+            </div>
+            <div class="row my-4">
+              <div class="input-group">
+                <button class="btn btn-success" type="submit" aria-required="true">Simpan</button>
+                <button class="btn btn-danger" type="reset">Reset</button>
+              </div>
+            </div>
+          </form>
+          <form action="/wifi" method="post">
+            <div class="row my-2">
+              <div class="input-group">
+                <input type="test" class="form-control" minlength="1" placeholder="Ubah SSID WiFi" name="ssid" required>
+                <input type="password" class="form-control" minlength="8" placeholder="Ubah password WiFi" name="pass"
+                  required>
+                <button class="btn btn-success" type="submit" aria-required="true">Update</button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
   </div>
-
-  <script>
-    function toggleMain() {
-      var x = document.getElementById("mainMenu");
-      var y = document.getElementById("settingsMenu")
-      if (x.style.display === "none") {
-        x.style.display = "block";
-        y.style.display = "none";
-      }
-    }
-    function toggleSettings() {
-      var x = document.getElementById("mainMenu");
-      var y = document.getElementById("settingsMenu")
-      if (y.style.display === "none") {
-        y.style.display = "block";
-        x.style.display = "none";
-      }
-    }
-  </script>
 </body>
 
 <footer>
@@ -146,5 +143,28 @@
     </div>
   </div>
 </footer>
+
+<script>
+  setInterval(function () {
+    var xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function () {
+      if (this.readyState == 4 && this.status == 200) {
+        document.getElementById("temperature").innerHTML = this.responseText;
+      }
+    };
+    xhttp.open("GET", "/temp", true);
+    xhttp.send();
+  }, 10000);
+  setInterval(function () {
+    var xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function () {
+      if (this.readyState == 4 && this.status == 200) {
+        document.getElementById("time").innerHTML = this.responseText;
+      }
+    };
+    xhttp.open("GET", "/time", true);
+    xhttp.send();
+  }, 10000);
+</script>
 
 </html>
