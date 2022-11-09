@@ -34,31 +34,31 @@
           <tbody>
             <tr>
               <td>Temperatur</td>
-              <td><span id="temperature">%TEMPPLACEHOLDER%</span> °C</td>
+              <td><span id="temperature">NaN</span> °C</td>
             </tr>
             <tr>
               <td>Waktu sekarang</td>
-              <td id="time">%TIMEPLACEHOLDER%</td>
+              <td id="time">NaN</td>
             </tr>
             <tr>
               <td>Batas temperatur</td>
-              <td><span id="thresh">%THRESHOLDPLACEHOLDER%</span> °C</td>
+              <td><span id="thresh">NaN</span> °C</td>
             </tr>
             <tr>
-              <td>Timer 1 - <span id="stT1">%STATUS1PLACEHOLDER%</span></td>
-              <td id="rpT1">%TIMER1PLACEHOLDER%</td>
+              <td>Timer 1 - <span id="stT1" class="text-bg-primary" style="padding-left: 3px; padding-right: 3px;">NaN</span></td>
+              <td id="rpT1">NaN</td>
             </tr>
             <tr>
-              <td>Timer 2 - <span id="stT2">%STATUS2PLACEHOLDER%</span></td>
-              <td id="rpT2">%TIMER2PLACEHOLDER%</td>
+              <td>Timer 2 - <span id="stT2" class="text-bg-primary" style="padding-left: 3px; padding-right: 3px;">NaN</span></td>
+              <td id="rpT2">NaN</td>
             </tr>
             <tr>
-              <td>Timer 3 - <span id="stT3">%STATUS3PLACEHOLDER%</span></td>
-              <td id="rpT3">%TIMER3PLACEHOLDER%</td>
+              <td>Timer 3 - <span id="stT3" class="text-bg-primary" style="padding-left: 3px; padding-right: 3px;">NaN</span></td>
+              <td id="rpT3">NaN</td>
             </tr>
             <tr>
               <td>Durasi nyala penyiram</td>
-              <td id="drt">%DURATIONPLACEHOLDER%</td>
+              <td id="drt">NaN</td>
             </tr>
           </tbody>
         </table>
@@ -71,43 +71,43 @@
             <div class="row my-2">
               <div class="input-group">
                 <span class="input-group-text">Batas temperatur</span>
-                <input type="number" step="0.1" class="form-control" id="TempThresh" name="TempThresh"
-                  value="%THRESHOLDPLACEHOLDER%" required><br>
+                <input type="number" step="0.1" class="form-control" id="TempThresh" name="TempThresh" value="30.5"
+                  required><br>
                 <span class="input-group-text">°C</span>
               </div>
             </div>
             <div class="row my-2">
               <div class="input-group">
                 <span class="input-group-text">Timer 1</span>
-                <input type="time" class="form-control" id="T1" name="T1" value="%TIMER1PLACEHOLDER%" required>
+                <input type="time" class="form-control" id="T1" name="T1" value="00:00" required>
                 <div class="input-group-text">
-                  <input type="checkbox" id="statusT1" name="statusT1" value="yes">
+                  <input type="checkbox" id="statusT1" name="statusT1">
                 </div>
               </div>
             </div>
             <div class="row my-2">
               <div class="input-group">
                 <span class="input-group-text">Timer 2</span>
-                <input type="time" class="form-control" id="T2" name="T2" value="%TIMER2PLACEHOLDER%" required>
+                <input type="time" class="form-control" id="T2" name="T2" value="00:00" required>
                 <div class="input-group-text">
-                  <input type="checkbox" id="statusT2" name="statusT2" value="yes">
+                  <input type="checkbox" id="statusT2" name="statusT2">
                 </div>
               </div>
             </div>
             <div class="row my-2">
               <div class="input-group">
                 <span class="input-group-text">Timer 3</span>
-                <input type="time" class="form-control" id="T3" name="T3" value="%TIMER3PLACEHOLDER%" required>
+                <input type="time" class="form-control" id="T3" name="T3" value="00:00" required>
                 <div class="input-group-text">
-                  <input type="checkbox" id="statusT3" name="statusT3" value="yes">
+                  <input type="checkbox" id="statusT3" name="statusT3">
                 </div>
               </div>
             </div>
             <div class="row my-2">
               <div class="input-group">
                 <span class="input-group-text">Durasi nyala penyiram</span>
-                <input type="number" min="1" max="60" class="form-control" id="duration" name="duration"
-                  value="%DURATIONPLACEHOLDER%" required><br>
+                <input type="number" min="1" max="60" class="form-control" id="duration" name="duration" value="1"
+                  required><br>
                 <span class="input-group-text">Menit</span>
               </div>
             </div>
@@ -155,6 +155,7 @@
     xhttp.open("GET", "/temp", true);
     xhttp.send();
   }, 10000);
+
   setInterval(function () {
     var xhttp = new XMLHttpRequest();
     xhttp.onreadystatechange = function () {
@@ -165,6 +166,95 @@
     xhttp.open("GET", "/time", true);
     xhttp.send();
   }, 10000);
+
+  setInterval(function () {
+    var xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function () {
+      if (this.readyState == 4 && this.status == 200) {
+        document.getElementById("thresh").innerHTML = this.responseText;
+      }
+    };
+    xhttp.open("GET", "/thresh", true);
+    xhttp.send();
+  }, 10000);
+
+  setInterval(function () {
+    var xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function () {
+      if (this.readyState == 4 && this.status == 200) {
+        document.getElementById("stT1").innerHTML = this.responseText;
+      }
+    };
+    xhttp.open("GET", "/timer1status", true);
+    xhttp.send();
+  }, 10000);
+
+  setInterval(function () {
+    var xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function () {
+      if (this.readyState == 4 && this.status == 200) {
+        document.getElementById("rpT1").innerHTML = this.responseText;
+      }
+    };
+    xhttp.open("GET", "/timer1", true);
+    xhttp.send();
+  }, 10000);
+
+  setInterval(function () {
+    var xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function () {
+      if (this.readyState == 4 && this.status == 200) {
+        document.getElementById("stT2").innerHTML = this.responseText;
+      }
+    };
+    xhttp.open("GET", "/timer2status", true);
+    xhttp.send();
+  }, 10000);
+
+  setInterval(function () {
+    var xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function () {
+      if (this.readyState == 4 && this.status == 200) {
+        document.getElementById("rpT2").innerHTML = this.responseText;
+      }
+    };
+    xhttp.open("GET", "/timer2", true);
+    xhttp.send();
+  }, 10000);
+
+  setInterval(function () {
+    var xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function () {
+      if (this.readyState == 4 && this.status == 200) {
+        document.getElementById("stT3").innerHTML = this.responseText;
+      }
+    };
+    xhttp.open("GET", "/timer3status", true);
+    xhttp.send();
+  }, 10000);
+
+  setInterval(function () {
+    var xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function () {
+      if (this.readyState == 4 && this.status == 200) {
+        document.getElementById("rpT3").innerHTML = this.responseText;
+      }
+    };
+    xhttp.open("GET", "/timer3", true);
+    xhttp.send();
+  }, 10000);
+
+  setInterval(function () {
+    var xhttp = new XMLHttpRequest();
+    xhttp.onreadystatechange = function () {
+      if (this.readyState == 4 && this.status == 200) {
+        document.getElementById("drt").innerHTML = this.responseText;
+      }
+    };
+    xhttp.open("GET", "/duration", true);
+    xhttp.send();
+  }, 10000);
+
 </script>
 
 </html>

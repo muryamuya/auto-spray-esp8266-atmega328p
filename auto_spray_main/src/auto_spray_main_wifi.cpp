@@ -58,7 +58,7 @@ public:
 
   void handleRequest(AsyncWebServerRequest *request)
   {
-    request->redirect("/");
+    request->redirect("http://192.168.1.1");
   }
 };
 
@@ -91,10 +91,17 @@ union floatToBytes
   float value;
 } fl2b;
 
+union charToBytes
+{
+  char text[3];
+  byte value;
+} c2b;
+
 unsigned long counter_send, counter_receive, counter_blink, counter_backlight = 0;
 byte state, btn_set, blinker, indx, len = 0;
 bool backlight_btn = true;
 bool restart = false;
+char timeTemplate[6];
 
 /*
 pin GPIO 14 / D5
@@ -193,8 +200,9 @@ void displayFactoryReset();
 void displayFactoryResetConfirm();
 void displayMenu();
 void buttonMenu();
-String statusTimer();
-String processor();
+String statusTimer(byte status);
+String concatTime(byte hour, byte minute);
+byte splitTime(char time, char params);
 void setupServer();
 
 // I2C Comms -----------------------------------------------------------
@@ -2098,65 +2106,81 @@ String statusTimer(byte status)
     return "Off";
 }
 
-String processor(const String &var)
+String concatTime(byte hour, byte minute)
 {
-  if (var == "TEMPPLACEHOLDER")
+  String hr, mnt, conc;
+  if (hour < 10)
   {
-    return String(temperature.celcius);
+    hr = "0" + String(hour);
   }
-  if (var == "TIMEPLACEHOLDER")
+  else
   {
-    return String(RTC.hour + ":" + RTC.minute);
+    hr = String(hour);
   }
-  if (var == "THRESHOLDPLACEHOLDER")
+  if (minute < 10)
   {
-    return String(temperature.threshold);
+    mnt = "0" + String(minute);
   }
-  if (var == "TIMER1PLACEHOLDER")
+  else
   {
-    return String(timer1.hour + ":" + timer1.minute);
+    mnt = String(minute);
   }
-  if (var == "STATUS1PLACEHOLDER")
-  {
-    return statusTimer(timer1.setting);
+  conc = hr + " : " + mnt;
+  return conc;
+}
+
+byte splitTime(const char time[6], const char* params){ // Parameter: hr = get hour, mnt = get minute.
+  if(strcmp(params, "hr") == 0){
+    for (byte i=0; i<1; i++){
+      c2b.text[i] = time[i];
+    }
+    return c2b.value;
   }
-  if (var == "TIMER2PLACEHOLDER")
-  {
-    return String(timer2.hour + ":" + timer2.minute);
+  else if(strcmp(params, "mnt") == 0){
+    for (byte i=0; i<1; i++){
+      c2b.text[i] = time[i+3];
+    }
+    return c2b.value;
   }
-  if (var == "STATUS2PLACEHOLDER")
-  {
-    return statusTimer(timer2.setting);
-  }
-  if (var == "TIMER3PLACEHOLDER")
-  {
-    return String(timer3.hour + ":" + timer3.minute);
-  }
-  if (var == "STATUS3PLACEHOLDER")
-  {
-    return statusTimer(timer3.setting);
-  }
-  if (var == "DURATIONPLACEHOLDER")
-  {
-    return String(deviceSet.duration);
-  }
-  return String();
+  else return 0;
 }
 
 void setupServer()
 {
   webServer.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
-               { request->send(LittleFS, "/index.html", String(), false, processor); });
+               { request->send(LittleFS, "/index.html", "text/html", false); });
 
   webServer.serveStatic("/", LittleFS, "/");
 
   webServer.on("/temp", HTTP_GET, [](AsyncWebServerRequest *request)
-               {
-    fl2b.value = temperature.celcius;
-    request->send_P(200, "text/plain", fl2b.text); });
+               { request->send_P(200, "text/plain", String(temperature.celcius).c_str()); });
+
+  webServer.on("/thresh", HTTP_GET, [](AsyncWebServerRequest *request)
+               { request->send_P(200, "text/plain", String(temperature.threshold).c_str()); });
 
   webServer.on("/time", HTTP_GET, [](AsyncWebServerRequest *request)
-               { request->send_P(200, "text/plain", String(RTC.hour + ":" + RTC.minute).c_str()); });
+               { request->send_P(200, "text/plain", concatTime(RTC.hour, RTC.minute).c_str()); });
+
+  webServer.on("/timer1", HTTP_GET, [](AsyncWebServerRequest *request)
+               { request->send_P(200, "text/plain", concatTime(timer1.hour, timer1.minute).c_str()); });
+
+  webServer.on("/timer1status", HTTP_GET, [](AsyncWebServerRequest *request)
+               { request->send_P(200, "text/plain", statusTimer(timer1.setting).c_str()); });
+
+  webServer.on("/timer2", HTTP_GET, [](AsyncWebServerRequest *request)
+               { request->send_P(200, "text/plain", concatTime(timer2.hour, timer2.minute).c_str()); });
+
+  webServer.on("/timer2status", HTTP_GET, [](AsyncWebServerRequest *request)
+               { request->send_P(200, "text/plain", statusTimer(timer2.setting).c_str()); });
+
+  webServer.on("/timer3", HTTP_GET, [](AsyncWebServerRequest *request)
+               { request->send_P(200, "text/plain", concatTime(timer3.hour, timer3.minute).c_str()); });
+
+  webServer.on("/timer3status", HTTP_GET, [](AsyncWebServerRequest *request)
+               { request->send_P(200, "text/plain", statusTimer(timer3.setting).c_str()); });
+
+  webServer.on("/duration", HTTP_GET, [](AsyncWebServerRequest *request)
+               { request->send_P(200, "text/plain", String(deviceSet.duration).c_str()); });
 
   webServer.on("/wifi", HTTP_POST, [](AsyncWebServerRequest *request)
                {
@@ -2181,8 +2205,80 @@ void setupServer()
           }
           }
         EEPROM.commit();
-        request->send(200, "text/plain", "Done, ESP will restart.");
+        request->send(200, "text/plain", "Data diterima, alat akan restart.");
         restart = true;
+      }
+    } });
+
+    webServer.on("/settings", HTTP_POST, [](AsyncWebServerRequest *request)
+               {
+    int params = request->params();
+    for (int i=0; i<params; i++){
+      AsyncWebParameter* p = request->getParam(i);
+      if(p->isPost()){
+        if (p->name() == "TempThresh") {
+          strcpy(fl2b.text, p->value().c_str());
+          temperature.threshold = fl2b.value;
+          EEPROM.put(0, temperature.threshold);
+          }
+        if (p->name() == "T1") {
+          strcpy(timeTemplate, p->value().c_str());
+          timer1.hour = splitTime(timeTemplate, "hr");
+          timer1.minute = splitTime(timeTemplate, "mnt");
+          EEPROM.put(6, timer1.hour);
+          EEPROM.put(7, timer1.minute);
+          }
+        if (p->name() == "statusT1") {
+          strcpy(fl2b.text, p->value().c_str());
+          if (strcmp(fl2b.text, "on") == 0){
+            timer1.setting = 1;
+          }
+          else{
+            timer1.setting = 0;
+          }
+          EEPROM.put(8, timer1.setting);
+          }
+        if (p->name() == "T2") {
+          strcpy(timeTemplate, p->value().c_str());
+          timer2.hour = splitTime(timeTemplate, "hr");
+          timer2.minute = splitTime(timeTemplate, "mnt");
+          EEPROM.put(9, timer2.hour);
+          EEPROM.put(10, timer2.minute);
+          }
+          if (p->name() == "statusT2") {
+          strcpy(fl2b.text, p->value().c_str());
+          if (strcmp(fl2b.text, "on") == 0){
+            timer2.setting = 1;
+          }
+          else{
+            timer2.setting = 0;
+          }
+          EEPROM.put(11, timer2.setting);
+          }
+        if (p->name() == "T3") {
+          strcpy(timeTemplate, p->value().c_str());
+          timer3.hour = splitTime(timeTemplate, "hr");
+          timer3.minute = splitTime(timeTemplate, "mnt");
+          EEPROM.put(12, timer3.hour);
+          EEPROM.put(13, timer3.minute);
+          }
+          if (p->name() == "statusT3") {
+          strcpy(fl2b.text, p->value().c_str());
+          if (strcmp(fl2b.text, "on") == 0){
+            timer3.setting = 1;
+          }
+          else{
+            timer3.setting = 0;
+          }
+          EEPROM.put(14, timer3.setting);
+          }
+        if (p->name() == "duration") {
+          strcpy(c2b.text, p->value().c_str());
+          deviceSet.duration = c2b.value;
+          EEPROM.put(5, deviceSet.duration);
+          }
+        EEPROM.commit();
+        request->send(200, "text/plain", "Data telah diterima dan disimpan, silahkan kembali ke laman utama.");
       }
     } });
 }
