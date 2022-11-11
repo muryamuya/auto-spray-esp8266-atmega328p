@@ -91,17 +91,10 @@ union floatToBytes
   float value;
 } fl2b;
 
-union charToBytes
-{
-  char text[3];
-  byte value;
-} c2b;
-
 unsigned long counter_send, counter_receive, counter_blink, counter_backlight = 0;
 byte state, btn_set, blinker, indx, len = 0;
 bool backlight_btn = true;
 bool restart = false;
-char timeTemplate[6];
 
 /*
 pin GPIO 14 / D5
@@ -202,7 +195,6 @@ void displayMenu();
 void buttonMenu();
 String statusTimer(byte status);
 String concatTime(byte hour, byte minute);
-byte splitTime(char time, char params);
 void setupServer();
 
 // I2C Comms -----------------------------------------------------------
@@ -2125,24 +2117,8 @@ String concatTime(byte hour, byte minute)
   {
     mnt = String(minute);
   }
-  conc = hr + " : " + mnt;
+  conc = hr + ":" + mnt;
   return conc;
-}
-
-byte splitTime(const char time[6], const char* params){ // Parameter: hr = get hour, mnt = get minute.
-  if(strcmp(params, "hr") == 0){
-    for (byte i=0; i<1; i++){
-      c2b.text[i] = time[i];
-    }
-    return c2b.value;
-  }
-  else if(strcmp(params, "mnt") == 0){
-    for (byte i=0; i<1; i++){
-      c2b.text[i] = time[i+3];
-    }
-    return c2b.value;
-  }
-  else return 0;
 }
 
 void setupServer()
@@ -2150,7 +2126,7 @@ void setupServer()
   webServer.on("/", HTTP_GET, [](AsyncWebServerRequest *request)
                { request->send(LittleFS, "/index.html", "text/html", false); });
 
-  webServer.serveStatic("/", LittleFS, "/");
+  webServer.serveStatic("/", LittleFS, "/").setCacheControl("max-age=31536000"); // 365 days
 
   webServer.on("/temp", HTTP_GET, [](AsyncWebServerRequest *request)
                { request->send_P(200, "text/plain", String(temperature.celcius).c_str()); });
@@ -2210,74 +2186,100 @@ void setupServer()
       }
     } });
 
-    webServer.on("/settings", HTTP_POST, [](AsyncWebServerRequest *request)
+  webServer.on("/settings", HTTP_POST, [](AsyncWebServerRequest *request)
                {
     int params = request->params();
     for (int i=0; i<params; i++){
       AsyncWebParameter* p = request->getParam(i);
       if(p->isPost()){
         if (p->name() == "TempThresh") {
-          strcpy(fl2b.text, p->value().c_str());
-          temperature.threshold = fl2b.value;
+          String temp = p->value();
+          temp.replace(",", ".");
+          temperature.threshold = temp.toFloat();
           EEPROM.put(0, temperature.threshold);
           }
-        if (p->name() == "T1") {
-          strcpy(timeTemplate, p->value().c_str());
-          timer1.hour = splitTime(timeTemplate, "hr");
-          timer1.minute = splitTime(timeTemplate, "mnt");
+        if (p->name() == "timeT1") {
+          String temp1 = p->value();
+          String temp2 = temp1;
+          temp1 = temp1.substring(0,2);
+          temp2 = temp2.substring(3,5);
+          timer1.hour = byte(temp1.toInt());
+          timer1.minute = byte(temp2.toInt());
           EEPROM.put(6, timer1.hour);
           EEPROM.put(7, timer1.minute);
           }
         if (p->name() == "statusT1") {
-          strcpy(fl2b.text, p->value().c_str());
-          if (strcmp(fl2b.text, "on") == 0){
+          if (p->value() == "on"){
             timer1.setting = 1;
           }
-          else{
+          else if (p->value() == "off"){
             timer1.setting = 0;
           }
           EEPROM.put(8, timer1.setting);
           }
-        if (p->name() == "T2") {
-          strcpy(timeTemplate, p->value().c_str());
-          timer2.hour = splitTime(timeTemplate, "hr");
-          timer2.minute = splitTime(timeTemplate, "mnt");
+        if (p->name() == "timeT2") {
+          String temp1 = p->value();
+          String temp2 = temp1;
+          temp1 = temp1.substring(0,2);
+          temp2 = temp2.substring(3,5);
+          timer2.hour = byte(temp1.toInt());
+          timer2.minute = byte(temp2.toInt());
           EEPROM.put(9, timer2.hour);
           EEPROM.put(10, timer2.minute);
           }
           if (p->name() == "statusT2") {
-          strcpy(fl2b.text, p->value().c_str());
-          if (strcmp(fl2b.text, "on") == 0){
+          if (p->value() == "on"){
             timer2.setting = 1;
           }
-          else{
+          else if (p->value() == "off"){
             timer2.setting = 0;
           }
           EEPROM.put(11, timer2.setting);
           }
-        if (p->name() == "T3") {
-          strcpy(timeTemplate, p->value().c_str());
-          timer3.hour = splitTime(timeTemplate, "hr");
-          timer3.minute = splitTime(timeTemplate, "mnt");
+        if (p->name() == "timeT3") {
+          String temp1 = p->value();
+          String temp2 = temp1;
+          temp1 = temp1.substring(0,2);
+          temp2 = temp2.substring(3,5);
+          timer3.hour = byte(temp1.toInt());
+          timer3.minute = byte(temp2.toInt());
           EEPROM.put(12, timer3.hour);
           EEPROM.put(13, timer3.minute);
           }
           if (p->name() == "statusT3") {
-          strcpy(fl2b.text, p->value().c_str());
-          if (strcmp(fl2b.text, "on") == 0){
+          if (p->value() == "on"){
             timer3.setting = 1;
           }
-          else{
+          else if (p->value() == "off"){
             timer3.setting = 0;
           }
           EEPROM.put(14, timer3.setting);
           }
         if (p->name() == "duration") {
-          strcpy(c2b.text, p->value().c_str());
-          deviceSet.duration = c2b.value;
+          String temp = p->value();
+          deviceSet.duration = byte(temp.toInt());
           EEPROM.put(5, deviceSet.duration);
           }
         EEPROM.commit();
+        request->send(200, "text/plain", "Data telah diterima dan disimpan, silahkan kembali ke laman utama.");
+      }
+    } });
+
+  webServer.on("/RTC", HTTP_POST, [](AsyncWebServerRequest *request)
+               {
+    int params = request->params();
+    for (int i=0; i<params; i++){
+      AsyncWebParameter* p = request->getParam(i);
+      if(p->isPost()){
+        if (p->name() == "RTC") {
+          String temp1 = p->value();
+          String temp2 = temp1;
+          temp1 = temp1.substring(0,2);
+          temp2 = temp2.substring(3,5);
+          RTC.hour = byte(temp1.toInt());
+          RTC.minute = byte(temp2.toInt());
+          setDS3231time(00, RTC.minute, RTC.hour, 7, 01, 10, 22);
+          }
         request->send(200, "text/plain", "Data telah diterima dan disimpan, silahkan kembali ke laman utama.");
       }
     } });

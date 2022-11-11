@@ -26,7 +26,7 @@
   </div>
 </nav>
 
-<body>
+<body onload="startup()">
   <div class="tab-content">
     <div class="tab-pane container active" id="home">
       <div class="container p-4">
@@ -45,15 +45,18 @@
               <td><span id="thresh">NaN</span> °C</td>
             </tr>
             <tr>
-              <td>Timer 1 - <span id="stT1" class="text-bg-primary" style="padding-left: 3px; padding-right: 3px;">NaN</span></td>
+              <td>Timer 1 - <span id="stT1" class="text-bg-primary"
+                  style="padding-left: 3px; padding-right: 3px;">NaN</span></td>
               <td id="rpT1">NaN</td>
             </tr>
             <tr>
-              <td>Timer 2 - <span id="stT2" class="text-bg-primary" style="padding-left: 3px; padding-right: 3px;">NaN</span></td>
+              <td>Timer 2 - <span id="stT2" class="text-bg-primary"
+                  style="padding-left: 3px; padding-right: 3px;">NaN</span></td>
               <td id="rpT2">NaN</td>
             </tr>
             <tr>
-              <td>Timer 3 - <span id="stT3" class="text-bg-primary" style="padding-left: 3px; padding-right: 3px;">NaN</span></td>
+              <td>Timer 3 - <span id="stT3" class="text-bg-primary"
+                  style="padding-left: 3px; padding-right: 3px;">NaN</span></td>
               <td id="rpT3">NaN</td>
             </tr>
             <tr>
@@ -71,7 +74,7 @@
             <div class="row my-2">
               <div class="input-group">
                 <span class="input-group-text">Batas temperatur</span>
-                <input type="number" step="0.1" class="form-control" id="TempThresh" name="TempThresh" value="30.5"
+                <input type="number" step="0.1" class="form-control" id="TempThresh" name="TempThresh" value="NaN"
                   required><br>
                 <span class="input-group-text">°C</span>
               </div>
@@ -79,34 +82,40 @@
             <div class="row my-2">
               <div class="input-group">
                 <span class="input-group-text">Timer 1</span>
-                <input type="time" class="form-control" id="T1" name="T1" value="00:00" required>
+                <input type="text" class="form-control" id="timeT1" name="timeT1" value="NaN"
+                  pattern="([0-1]{1}[0-9]{1}|20|21|22|23):[0-5]{1}[0-9]{1}" required>
                 <div class="input-group-text">
-                  <input type="checkbox" id="statusT1" name="statusT1">
+                  <input type="hidden" name="statusT1" value="off">
+                  <input type="checkbox" id="statusT1" name="statusT1" value="on">
                 </div>
               </div>
             </div>
             <div class="row my-2">
               <div class="input-group">
                 <span class="input-group-text">Timer 2</span>
-                <input type="time" class="form-control" id="T2" name="T2" value="00:00" required>
+                <input type="text" class="form-control" id="timeT2" name="timeT2" value="NaN"
+                  pattern="([0-1]{1}[0-9]{1}|20|21|22|23):[0-5]{1}[0-9]{1}" required>
                 <div class="input-group-text">
-                  <input type="checkbox" id="statusT2" name="statusT2">
+                  <input type="hidden" name="statusT2" value="off">
+                  <input type="checkbox" id="statusT2" name="statusT2" value="on">
                 </div>
               </div>
             </div>
             <div class="row my-2">
               <div class="input-group">
                 <span class="input-group-text">Timer 3</span>
-                <input type="time" class="form-control" id="T3" name="T3" value="00:00" required>
+                <input type="text" class="form-control" id="timeT3" name="timeT3" value="NaN"
+                  pattern="([0-1]{1}[0-9]{1}|20|21|22|23):[0-5]{1}[0-9]{1}" required>
                 <div class="input-group-text">
-                  <input type="checkbox" id="statusT3" name="statusT3">
+                  <input type="hidden" name="statusT3" value="off">
+                  <input type="checkbox" id="statusT3" name="statusT3" value="on">
                 </div>
               </div>
             </div>
             <div class="row my-2">
               <div class="input-group">
                 <span class="input-group-text">Durasi nyala penyiram</span>
-                <input type="number" min="1" max="60" class="form-control" id="duration" name="duration" value="1"
+                <input type="number" min="1" max="60" class="form-control" id="duration" name="duration" value="NaN"
                   required><br>
                 <span class="input-group-text">Menit</span>
               </div>
@@ -118,10 +127,20 @@
               </div>
             </div>
           </form>
+          <form action="/RTC" method="post">
+            <div class="row my-2">
+              <div class="input-group">
+                <span class="input-group-text">Ubah RTC</span>
+                <input type="text" class="form-control" id="RTC" name="RTC" value="NaN"
+                  pattern="([0-1]{1}[0-9]{1}|20|21|22|23):[0-5]{1}[0-9]{1}" required>
+                <button class="btn btn-success" type="submit" aria-required="true">Update</button>
+              </div>
+            </div>
+          </form>
           <form action="/wifi" method="post">
             <div class="row my-2">
               <div class="input-group">
-                <input type="test" class="form-control" minlength="1" placeholder="Ubah SSID WiFi" name="ssid" required>
+                <input type="text" class="form-control" minlength="1" placeholder="Ubah SSID WiFi" name="ssid" required>
                 <input type="password" class="form-control" minlength="8" placeholder="Ubah password WiFi" name="pass"
                   required>
                 <button class="btn btn-success" type="submit" aria-required="true">Update</button>
@@ -145,116 +164,204 @@
 </footer>
 
 <script>
-  setInterval(function () {
-    var xhttp = new XMLHttpRequest();
-    xhttp.onreadystatechange = function () {
+  window.onload = function () {
+    var xhttp1 = new XMLHttpRequest();
+    xhttp1.onreadystatechange = function () {
       if (this.readyState == 4 && this.status == 200) {
         document.getElementById("temperature").innerHTML = this.responseText;
       }
     };
-    xhttp.open("GET", "/temp", true);
-    xhttp.send();
-  }, 10000);
+    xhttp1.open("GET", "/temp", true);
+    xhttp1.send();
+
+    var xhttp2 = new XMLHttpRequest();
+    xhttp2.onreadystatechange = function () {
+      if (this.readyState == 4 && this.status == 200) {
+        document.getElementById("time").innerHTML = this.responseText;
+        document.getElementById("RTC").setAttribute("value", this.responseText)
+      }
+    };
+    xhttp2.open("GET", "/time", true);
+    xhttp2.send();
+
+    var xhttp3 = new XMLHttpRequest();
+    xhttp3.onreadystatechange = function () {
+      if (this.readyState == 4 && this.status == 200) {
+        document.getElementById("thresh").innerHTML = this.responseText;
+        document.getElementById("TempThresh").setAttribute("value", this.responseText);
+      }
+    };
+    xhttp3.open("GET", "/thresh", true);
+    xhttp3.send();
+
+    var xhttp4 = new XMLHttpRequest();
+    xhttp4.onreadystatechange = function () {
+      if (this.readyState == 4 && this.status == 200) {
+        document.getElementById("stT1").innerHTML = this.responseText;
+        if (this.responseText == "On") {
+          document.getElementById("statusT1").setAttribute("checked", "true");
+        }
+      }
+    };
+    xhttp4.open("GET", "/timer1status", true);
+    xhttp4.send();
+
+    var xhttp5 = new XMLHttpRequest();
+    xhttp5.onreadystatechange = function () {
+      if (this.readyState == 4 && this.status == 200) {
+        document.getElementById("rpT1").innerHTML = this.responseText;
+        document.getElementById("timeT1").setAttribute("value", this.responseText);
+      }
+    };
+    xhttp5.open("GET", "/timer1", true);
+    xhttp5.send();
+
+    var xhttp6 = new XMLHttpRequest();
+    xhttp6.onreadystatechange = function () {
+      if (this.readyState == 4 && this.status == 200) {
+        document.getElementById("stT2").innerHTML = this.responseText;
+        if (this.responseText == "On") {
+          document.getElementById("statusT2").setAttribute("checked", "true");
+        }
+      }
+    };
+    xhttp6.open("GET", "/timer2status", true);
+    xhttp6.send();
+
+    var xhttp7 = new XMLHttpRequest();
+    xhttp7.onreadystatechange = function () {
+      if (this.readyState == 4 && this.status == 200) {
+        document.getElementById("rpT2").innerHTML = this.responseText;
+        document.getElementById("timeT2").setAttribute("value", this.responseText);
+      }
+    };
+    xhttp7.open("GET", "/timer2", true);
+    xhttp7.send();
+
+    var xhttp8 = new XMLHttpRequest();
+    xhttp8.onreadystatechange = function () {
+      if (this.readyState == 4 && this.status == 200) {
+        document.getElementById("stT3").innerHTML = this.responseText;
+        if (this.responseText == "On") {
+          document.getElementById("statusT3").setAttribute("checked", "true");
+        }
+      }
+    };
+    xhttp8.open("GET", "/timer3status", true);
+    xhttp8.send();
+
+    var xhttp9 = new XMLHttpRequest();
+    xhttp9.onreadystatechange = function () {
+      if (this.readyState == 4 && this.status == 200) {
+        document.getElementById("rpT3").innerHTML = this.responseText;
+        document.getElementById("timeT3").setAttribute("value", this.responseText);
+      }
+    };
+    xhttp9.open("GET", "/timer3", true);
+    xhttp9.send();
+
+    var xhttp10 = new XMLHttpRequest();
+    xhttp10.onreadystatechange = function () {
+      if (this.readyState == 4 && this.status == 200) {
+        document.getElementById("drt").innerHTML = this.responseText;
+        document.getElementById("duration").setAttribute("value", this.responseText);
+      }
+    };
+    xhttp10.open("GET", "/duration", true);
+    xhttp10.send();
+  }
 
   setInterval(function () {
-    var xhttp = new XMLHttpRequest();
-    xhttp.onreadystatechange = function () {
+    var xhttp1 = new XMLHttpRequest();
+    xhttp1.onreadystatechange = function () {
+      if (this.readyState == 4 && this.status == 200) {
+        document.getElementById("temperature").innerHTML = this.responseText;
+      }
+    };
+    xhttp1.open("GET", "/temp", true);
+    xhttp1.send();
+
+    var xhttp2 = new XMLHttpRequest();
+    xhttp2.onreadystatechange = function () {
       if (this.readyState == 4 && this.status == 200) {
         document.getElementById("time").innerHTML = this.responseText;
       }
     };
-    xhttp.open("GET", "/time", true);
-    xhttp.send();
-  }, 10000);
+    xhttp2.open("GET", "/time", true);
+    xhttp2.send();
 
-  setInterval(function () {
-    var xhttp = new XMLHttpRequest();
-    xhttp.onreadystatechange = function () {
+    var xhttp3 = new XMLHttpRequest();
+    xhttp3.onreadystatechange = function () {
       if (this.readyState == 4 && this.status == 200) {
         document.getElementById("thresh").innerHTML = this.responseText;
       }
     };
-    xhttp.open("GET", "/thresh", true);
-    xhttp.send();
-  }, 10000);
+    xhttp3.open("GET", "/thresh", true);
+    xhttp3.send();
 
-  setInterval(function () {
-    var xhttp = new XMLHttpRequest();
-    xhttp.onreadystatechange = function () {
+    var xhttp4 = new XMLHttpRequest();
+    xhttp4.onreadystatechange = function () {
       if (this.readyState == 4 && this.status == 200) {
         document.getElementById("stT1").innerHTML = this.responseText;
       }
     };
-    xhttp.open("GET", "/timer1status", true);
-    xhttp.send();
-  }, 10000);
+    xhttp4.open("GET", "/timer1status", true);
+    xhttp4.send();
 
-  setInterval(function () {
-    var xhttp = new XMLHttpRequest();
-    xhttp.onreadystatechange = function () {
+    var xhttp5 = new XMLHttpRequest();
+    xhttp5.onreadystatechange = function () {
       if (this.readyState == 4 && this.status == 200) {
         document.getElementById("rpT1").innerHTML = this.responseText;
       }
     };
-    xhttp.open("GET", "/timer1", true);
-    xhttp.send();
-  }, 10000);
+    xhttp5.open("GET", "/timer1", true);
+    xhttp5.send();
 
-  setInterval(function () {
-    var xhttp = new XMLHttpRequest();
-    xhttp.onreadystatechange = function () {
+    var xhttp6 = new XMLHttpRequest();
+    xhttp6.onreadystatechange = function () {
       if (this.readyState == 4 && this.status == 200) {
         document.getElementById("stT2").innerHTML = this.responseText;
       }
     };
-    xhttp.open("GET", "/timer2status", true);
-    xhttp.send();
-  }, 10000);
+    xhttp6.open("GET", "/timer2status", true);
+    xhttp6.send();
 
-  setInterval(function () {
-    var xhttp = new XMLHttpRequest();
-    xhttp.onreadystatechange = function () {
+    var xhttp7 = new XMLHttpRequest();
+    xhttp7.onreadystatechange = function () {
       if (this.readyState == 4 && this.status == 200) {
         document.getElementById("rpT2").innerHTML = this.responseText;
       }
     };
-    xhttp.open("GET", "/timer2", true);
-    xhttp.send();
-  }, 10000);
+    xhttp7.open("GET", "/timer2", true);
+    xhttp7.send();
 
-  setInterval(function () {
-    var xhttp = new XMLHttpRequest();
-    xhttp.onreadystatechange = function () {
+    var xhttp8 = new XMLHttpRequest();
+    xhttp8.onreadystatechange = function () {
       if (this.readyState == 4 && this.status == 200) {
         document.getElementById("stT3").innerHTML = this.responseText;
       }
     };
-    xhttp.open("GET", "/timer3status", true);
-    xhttp.send();
-  }, 10000);
+    xhttp8.open("GET", "/timer3status", true);
+    xhttp8.send();
 
-  setInterval(function () {
-    var xhttp = new XMLHttpRequest();
-    xhttp.onreadystatechange = function () {
+    var xhttp9 = new XMLHttpRequest();
+    xhttp9.onreadystatechange = function () {
       if (this.readyState == 4 && this.status == 200) {
         document.getElementById("rpT3").innerHTML = this.responseText;
       }
     };
-    xhttp.open("GET", "/timer3", true);
-    xhttp.send();
-  }, 10000);
+    xhttp9.open("GET", "/timer3", true);
+    xhttp9.send();
 
-  setInterval(function () {
-    var xhttp = new XMLHttpRequest();
-    xhttp.onreadystatechange = function () {
+    var xhttp10 = new XMLHttpRequest();
+    xhttp10.onreadystatechange = function () {
       if (this.readyState == 4 && this.status == 200) {
         document.getElementById("drt").innerHTML = this.responseText;
       }
     };
-    xhttp.open("GET", "/duration", true);
-    xhttp.send();
+    xhttp10.open("GET", "/duration", true);
+    xhttp10.send();
   }, 10000);
-
 </script>
 
 </html>
