@@ -2181,7 +2181,7 @@ void setupServer()
           }
           }
         EEPROM.commit();
-        request->send(200, "text/plain", "Data diterima, alat akan restart.");
+        request->send(200, "text/html", "<p>Data diterima, alat akan restart.</p><p>Mohon tunggu beberapa saat, kemudian hubungkan kembali ke alat.</p>");
         restart = true;
       }
     } });
@@ -2261,7 +2261,7 @@ void setupServer()
           EEPROM.put(5, deviceSet.duration);
           }
         EEPROM.commit();
-        request->send(200, "text/plain", "Data telah diterima dan disimpan, silahkan kembali ke laman utama.");
+        request->send(200, "text/html", "<p>Data telah diterima dan disimpan, untuk kembali ke laman utama klik <a href=\"http://192.168.1.1\">disini</a>.</p>");
       }
     } });
 
@@ -2280,7 +2280,7 @@ void setupServer()
           RTC.minute = byte(temp2.toInt());
           setDS3231time(00, RTC.minute, RTC.hour, 7, 01, 10, 22);
           }
-        request->send(200, "text/plain", "Data telah diterima dan disimpan, silahkan kembali ke laman utama.");
+        request->send(200, "text/html", "<p>Data telah diterima dan disimpan, untuk kembali ke laman utama klik <a href=\"http://192.168.1.1\">disini</a>.</p>");
       }
     } });
 }
