@@ -53,7 +53,7 @@
     )
     (pad_to_mask_clearance 0)
     (pcbplotparams
-      (layerselection 0x0001000_fffffffe)
+      (layerselection 0x0000000_fffffffe)
       (disableapertmacros false)
       (usegerberextensions false)
       (usegerberattributes true)
@@ -61,7 +61,7 @@
       (creategerberjobfile true)
       (svguseinch false)
       (svgprecision 6)
-      (excludeedgelayer true)
+      (excludeedgelayer false)
       (plotframeref false)
       (viasonmask false)
       (mode 1)
