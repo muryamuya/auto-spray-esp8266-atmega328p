@@ -437,6 +437,31 @@ void debugging()
   Serial.print("Backlight: ");
   Serial.println(deviceSet.backlight);
   Serial.println("-----------------------------");
+  byte error, address;
+  int nDevices = 0;
+  for (address = 1; address < 127; address++){
+    Wire.beginTransmission(address);
+    error = Wire.endTransmission();
+    if (error == 0){
+      Serial.print("I2C device found at address 0x");
+      if (address < 16)
+        Serial.print("0");
+      Serial.print(address, HEX);
+      Serial.println("  !");
+      nDevices++;
+    }
+    else if (error == 4){
+      Serial.print("Unknown error at address 0x");
+      if (address < 16)
+        Serial.print("0");
+      Serial.println(address, HEX);
+    }
+  }
+  if (nDevices == 0)
+    Serial.println("No I2C devices found\n");
+  else
+    Serial.println("done\n");
+  delay(5000);
 }
 
 // Menu item function ----------------------------------------------------------------
@@ -2290,7 +2315,7 @@ void setupServer()
 void setup()
 {
   LittleFS.begin();
-  // Serial.begin(9600);
+  Serial.begin(9600);
   EEPROM.begin(EEPROM_SIZE);
   fetchEEPROM();
   Wire.begin(1);
@@ -2329,5 +2354,5 @@ void loop()
     delay(5000);
     ESP.restart();
   }
-  // debugging();
+  debugging();
 }
