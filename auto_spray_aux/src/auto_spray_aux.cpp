@@ -24,10 +24,10 @@ struct RTC_now
 
 struct device_settings
 {
-  byte duration;  // spray duration
+  byte duration; // spray duration
 } deviceSet;
 
-unsigned long time_now = 0;
+unsigned long time_now, counter_loop = 0;
 int valve1, valve2, queue, indx = 0;
 char buffer[16];
 
@@ -108,8 +108,12 @@ void checkTemp()
 {
   sensors.requestTemperatures();
   temperature.celcius = sensors.getTempCByIndex(0);
-  if (temperature.celcius >= temperature.threshold && valve1 == 0 && valve2 == 0)
+  if (temperature.celcius >= temperature.threshold && valve1 == 0 && valve2 == 0 && queue == 0)
   {
+    digitalWrite(relay1, LOW);
+    digitalWrite(relay2, LOW);
+    digitalWrite(relay3, LOW);
+    delay(100);
     digitalWrite(relay2, HIGH);
     delay(500);
     digitalWrite(relay1, HIGH);
@@ -141,6 +145,10 @@ void checkTime()
   if (queue == 1 && valve1 == 0 && valve2 == 0)
   {
     time_now = millis();
+    digitalWrite(relay1, LOW);
+    digitalWrite(relay2, LOW);
+    digitalWrite(relay3, LOW);
+    delay(100);
     digitalWrite(relay3, HIGH);
     delay(500);
     digitalWrite(relay1, HIGH);
@@ -210,8 +218,11 @@ void setup()
 
 void loop()
 {
-  checkTemp();
-  checkTime();
-  debugging();
-  delay(500);
+  if ((millis() - counter_loop) > 500)
+  {
+    checkTemp();
+    checkTime();
+    debugging();
+    counter_loop = millis();
+  }
 }

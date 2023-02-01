@@ -91,7 +91,7 @@ union floatToBytes
   float value;
 } fl2b;
 
-unsigned long counter_send, counter_receive, counter_blink, counter_backlight = 0;
+unsigned long counter_send, counter_receive, counter_blink, counter_backlight, counter_debugging = 0;
 byte state, btn_set, blinker, indx, len = 0;
 bool backlight_btn = true;
 bool restart = false;
@@ -410,58 +410,64 @@ void readDS3231time(byte *second, // Read from RTC
 
 void debugging()
 {
-  Serial.println(temperature.celcius);
-  Serial.print("RTC: ");
-  Serial.print(RTC.hour);
-  Serial.print(":");
-  Serial.println(RTC.minute);
-  Serial.print("Timer1: ");
-  Serial.print(timer1.hour);
-  Serial.print(":");
-  Serial.println(timer1.minute);
-  Serial.println(timer1.setting);
-  Serial.print("Timer2: ");
-  Serial.print(timer2.hour);
-  Serial.print(":");
-  Serial.println(timer2.minute);
-  Serial.println(timer2.setting);
-  Serial.print("Timer3: ");
-  Serial.print(timer3.hour);
-  Serial.print(":");
-  Serial.println(timer3.minute);
-  Serial.println(timer3.setting);
-  Serial.print("Duration: ");
-  Serial.println(minuteToMillis(deviceSet.duration));
-  Serial.print("Threshold: ");
-  Serial.println(temperature.threshold);
-  Serial.print("Backlight: ");
-  Serial.println(deviceSet.backlight);
-  Serial.println("-----------------------------");
-  byte error, address;
-  int nDevices = 0;
-  for (address = 1; address < 127; address++){
-    Wire.beginTransmission(address);
-    error = Wire.endTransmission();
-    if (error == 0){
-      Serial.print("I2C device found at address 0x");
-      if (address < 16)
-        Serial.print("0");
-      Serial.print(address, HEX);
-      Serial.println("  !");
-      nDevices++;
+  if ((millis() - counter_debugging) > 5000)
+  {
+    Serial.println(temperature.celcius);
+    Serial.print("RTC: ");
+    Serial.print(RTC.hour);
+    Serial.print(":");
+    Serial.println(RTC.minute);
+    Serial.print("Timer1: ");
+    Serial.print(timer1.hour);
+    Serial.print(":");
+    Serial.println(timer1.minute);
+    Serial.println(timer1.setting);
+    Serial.print("Timer2: ");
+    Serial.print(timer2.hour);
+    Serial.print(":");
+    Serial.println(timer2.minute);
+    Serial.println(timer2.setting);
+    Serial.print("Timer3: ");
+    Serial.print(timer3.hour);
+    Serial.print(":");
+    Serial.println(timer3.minute);
+    Serial.println(timer3.setting);
+    Serial.print("Duration: ");
+    Serial.println(minuteToMillis(deviceSet.duration));
+    Serial.print("Threshold: ");
+    Serial.println(temperature.threshold);
+    Serial.print("Backlight: ");
+    Serial.println(deviceSet.backlight);
+    Serial.println("-----------------------------");
+    byte error, address;
+    int nDevices = 0;
+    for (address = 1; address < 127; address++)
+    {
+      Wire.beginTransmission(address);
+      error = Wire.endTransmission();
+      if (error == 0)
+      {
+        Serial.print("I2C device found at address 0x");
+        if (address < 16)
+          Serial.print("0");
+        Serial.print(address, HEX);
+        Serial.println("  !");
+        nDevices++;
+      }
+      else if (error == 4)
+      {
+        Serial.print("Unknown error at address 0x");
+        if (address < 16)
+          Serial.print("0");
+        Serial.println(address, HEX);
+      }
+      counter_debugging = millis();
     }
-    else if (error == 4){
-      Serial.print("Unknown error at address 0x");
-      if (address < 16)
-        Serial.print("0");
-      Serial.println(address, HEX);
-    }
+    if (nDevices == 0)
+      Serial.println("No I2C devices found\n");
+    else
+      Serial.println("done\n");
   }
-  if (nDevices == 0)
-    Serial.println("No I2C devices found\n");
-  else
-    Serial.println("done\n");
-  delay(5000);
 }
 
 // Menu item function ----------------------------------------------------------------
